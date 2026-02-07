@@ -1,676 +1,545 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CADDIE QUEST PRO</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CADDIE QUEST PRO</title>
 
-let currentOptions = [];
-
-<style>
-body{
-  margin:0;
-  font-family:sans-serif;
-  background:#0b3d0b;
-  color:white;
-  text-align:center;
-}
-.container{
-  max-width:700px;
-  margin:auto;
-  padding:20px;
-}
-.card{
-  background:rgba(0,0,0,0.85);
-  padding:20px;
-  border-radius:12px;
-}
-button{
-  width:100%;
-  padding:15px;
-  margin:8px 0;
-  font-size:16px;
-  border:none;
-  border-radius:8px;
-  background:#1b5e20;
-  color:white;
-}
-button:disabled{opacity:0.6}
-.correct{background:green !important;}
-.wrong{background:red !important;}
-#adminPanel{display:none;}
-</style>
+  <style>
+    body{
+      margin:0;
+      font-family:sans-serif;
+      background:#0b3d0b;
+      color:white;
+      text-align:center;
+    }
+    .container{
+      max-width:700px;
+      margin:auto;
+      padding:20px;
+    }
+    .card{
+      background:rgba(0,0,0,0.85);
+      padding:20px;
+      border-radius:12px;
+    }
+    button{
+      width:100%;
+      padding:15px;
+      margin:8px 0;
+      font-size:16px;
+      border:none;
+      border-radius:8px;
+      background:#1b5e20;
+      color:white;
+      -webkit-tap-highlight-color: transparent;
+    }
+    button:disabled{opacity:0.6}
+    .correct{background:green !important;}
+    .wrong{background:red !important;}
+    #adminPanel{display:none;}
+    input{
+      box-sizing:border-box;
+      border-radius:10px;
+      border:none;
+      outline:none;
+    }
+  </style>
 </head>
+
 <body>
+  <div class="container">
+    <div class="card" id="gameArea"></div>
+  </div>
 
-<div class="container">
-<div class="card" id="gameArea"></div>
-</div>
+  <script>
+  "use strict";
 
-<script>
+  // =====================
+  // ★ Google保存URLを入れる（必要なら）
+  // =====================
+  const GOOGLE_SCRIPT_URL = "ここにGASのURLを貼る";
 
-// =====================
-// ★ Google保存URLを入れる
-// =====================
-const GOOGLE_SCRIPT_URL = "ここにGASのURLを貼る";
+  // =====================
+  // 変数（★head内に書いてたJSは全部ここへ移動）
+  // =====================
+  let currentLevel = "";
+  let currentQuestion = 0;
+  let score = 0;
+  let quizData = [];
+  let playerName = "";
 
-// =====================
-function shuffleArray(array){
-  for(let i=array.length-1;i>0;i--){
-    let j=Math.floor(Math.random()*(i+1));
-    [array[i],array[j]]=[array[j],array[i]];
+  // 選択肢（シャッフル後の正誤判定用）
+  window.currentOptions = [];
+
+  // 進捗とログ（端末内に保存）
+  let progress = JSON.parse(localStorage.getItem("caddieProgress")) || {
+    beginner:false,
+    intermediate:false,
+    advanced:false,
+    master:false
+  };
+
+  let logs = JSON.parse(localStorage.getItem("caddieLogs")) || [];
+
+  // =====================
+  function shuffleArray(array){
+    for(let i=array.length-1;i>0;i--){
+      let j=Math.floor(Math.random()*(i+1));
+      [array[i],array[j]]=[array[j],array[i]];
+    }
+    return array;
   }
-}
-
-// =====================
-let currentLevel="";
-let currentQuestion=0;
-let score=0;
-let quizData=[];
-let playerName="";
-
-let progress=JSON.parse(localStorage.getItem("caddieProgress"))||{
-beginner:false,
-intermediate:false,
-advanced:false,
-master:false
-};
-
-let logs=JSON.parse(localStorage.getItem("caddieLogs"))||[];
-
-// =====================
-// ★ ランク判定
-// =====================
-function getRank(rate){
-if(rate===100)return "👑 SSS";
-if(rate>=90)return "🏆 S";
-if(rate>=80)return "🥇 A";
-if(rate>=70)return "🥈 B";
-if(rate>=60)return "🥉 C";
-return "🔰 D";
-}
-
-// =====================
-
-const beginner = [
-{question:"キャディーの基本姿勢として最も重要なのは？",
-choices:["スピード","笑顔と礼儀","距離感覚","声量"],
-answer:1,
-explanation:"第一印象は笑顔と礼儀で決まる。"},
-
-{question:"ティーグラウンドで最初に確認するのは？",
-choices:["風向き","ピン位置","使用ティー","前組の位置"],
-answer:3,
-explanation:"安全確認が最優先。"},
-
-{question:"残り距離を伝える時に必要なのは？",
-choices:["自信","勘","正確な計測","経験則のみ"],
-answer:2,
-explanation:"正確な距離が基本。"},
-
-{question:"バンカー均しで正しいのは？",
-choices:["足跡だけ","全体均す","放置","レーキ立てる"],
-answer:1,
-explanation:"全体を丁寧に均す。"},
-
-{question:"OBの正式名称は？",
-choices:["Out Ball","Official Boundary","Out of Bounds","Outside Birdie"],
-answer:2,
-explanation:"Out of Boundsの略。"},
-
-{question:"グリーン上で走って良い？",
-choices:["OK","状況次第","基本NG","急げば可"],
-answer:2,
-explanation:"芝保護のため走らない。"},
-
-{question:"お客様のクラブ確認はいつ？",
-choices:["前日","常時","ショット前","終わってから"],
-answer:2,
-explanation:"渡す前に必ず確認。"},
-
-{question:"プレーファストの基本は？",
-choices:["急がせる","準備の徹底","無言","走る"],
-answer:1,
-explanation:"準備を整えることが重要。"},
-
-{question:"ボールマーク修復は誰の仕事？",
-choices:["キャディー","お客様","見つけた人","全員"],
-answer:3,
-explanation:"見つけた人が直すのがマナー。"},
-
-{question:"雨天時優先すべきは？",
-choices:["速度","安全","売上","演出"],
-answer:1,
-explanation:"安全最優先。"}
-];
-
-const intermediate = [
-{question:"向かい風5m、150yの目安は？",
-choices:["そのまま","1番手上げ","2番手上げ","下げる"],
-answer:1,
-explanation:"基本は1番手上げ。"},
-
-{question:"フォロー風の注意点は？",
-choices:["飛ばない","止まりにくい","曲がる","短くなる"],
-answer:1,
-explanation:"ランが出る。"},
-
-{question:"硬いグリーンの狙いは？",
-choices:["奥","ピン","手前","無視"],
-answer:2,
-explanation:"手前から攻める。"},
-
-{question:"誤球防止で重要なのは？",
-choices:["色確認","番号確認","メーカー確認","全部"],
-answer:3,
-explanation:"全確認が基本。"},
-
-{question:"雷鳴が聞こえたら？",
-choices:["続行","様子見","避難提案","急ぐ"],
-answer:2,
-explanation:"即安全確保。"},
-
-{question:"深いラフの番手選択は？",
-choices:["上げる","下げる","変えない","強振"],
-answer:1,
-explanation:"脱出優先で下げる判断も重要。"},
-
-{question:"下りパットで重要なのは？",
-choices:["強く","弱く","真っ直ぐ","無視"],
-answer:1,
-explanation:"タッチ重視。"},
-
-{question:"競技で距離計は？",
-choices:["自由","禁止","条件付き可","無関係"],
-answer:2,
-explanation:"ローカルルール確認必須。"},
-
-{question:"暫定球宣言が無い場合？",
-choices:["有効","無効","後でOK","無視"],
-answer:1,
-explanation:"宣言なしは暫定球にならない。"},
-
-{question:"球探し制限時間は？",
-choices:["3分","5分","2分","無制限"],
-answer:0,
-explanation:"3分ルール。"},
-
-{question:"アンプレ宣言は誰？",
-choices:["キャディー","同伴者","本人","競技委員"],
-answer:2,
-explanation:"プレーヤー本人のみ。"},
-
-{question:"打順の基本は？",
-choices:["若い順","遠い順","速い順","申告順"],
-answer:1,
-explanation:"ホールから遠い順。"},
-
-{question:"ピンを抜く判断は？",
-choices:["必ず抜く","必ず立てる","状況次第","無視"],
-answer:2,
-explanation:"現在は立てたまま可。"},
-
-{question:"傾斜地での助言は？",
-choices:["強く","通常通り","1番手上げ","状況説明"],
-answer:3,
-explanation:"傾斜説明が重要。"},
-
-{question:"林の中で優先は？",
-choices:["距離","方向","脱出","ピン"],
-answer:2,
-explanation:"脱出優先。"},
-
-{question:"朝露グリーンは？",
-choices:["速い","遅い","普通","読めない"],
-answer:1,
-explanation:"重くなる傾向。"},
-
-{question:"競技中アドバイス範囲は？",
-choices:["全面OK","禁止","規則内","自由"],
-answer:2,
-explanation:"規則内のみ可。"},
-
-{question:"打球が他人に当たったら？",
-choices:["無効","罰","原則そのまま","打ち直し"],
-answer:2,
-explanation:"原則そのまま。"},
-
-{question:"池越え心理は？",
-choices:["強くなる","弱くなる","変わらない","無関係"],
-answer:1,
-explanation:"ショートしやすい。"},
-
-{question:"プレーファスト最大要因は？",
-choices:["走る","準備","声出し","急がせる"],
-answer:1,
-explanation:"事前準備。"}
-];
-
-// ---------- 上級20問（実戦ケース） ----------
-var advanced=[
-
-{
-question:"競技中、プレーヤーが誤った距離を信じかけている。どう対応する？",
-choices:["黙る","即座に訂正","あとで伝える","同調する"],
-answer:1,
-explanation:"誤情報は即訂正が基本。"
-},
-{
-question:"残り150y、強いフォロー風。適切な提案は？",
-choices:["1番手上げる","1番手下げる","変えない","強振提案"],
-answer:1,
-explanation:"フォローは番手を下げる判断。"
-},
-{
-question:"下り5mのスライスライン。最重要要素は？",
-choices:["強さ","曲がり幅","距離感","真っ直ぐ打たせる"],
-answer:2,
-explanation:"下りは距離感が最優先。"
-},
-{
-question:"プレーヤーが苛立っている時の対応は？",
-choices:["理論説明","共感し落ち着かせる","無視","叱る"],
-answer:1,
-explanation:"心理サポートも役割。"
-},
-{
-question:"前組と2ホール空いた。まず何をする？",
-choices:["急がせる","状況共有と準備促進","マスター室無視","雑談"],
-answer:1,
-explanation:"冷静に状況共有。"
-},
-{
-question:"深いラフからピン狙い。最適助言は？",
-choices:["狙わせる","安全サイド提案","強振","無言"],
-answer:1,
-explanation:"リスク管理が上級判断。"
-},
-{
-question:"池越えショットで迷い。最優先は？",
-choices:["挑戦させる","成功確率共有","急がせる","無視"],
-answer:1,
-explanation:"確率提示がプロ。"
-},
-{
-question:"グリーンが極端に速い日。何を強調する？",
-choices:["曲がり","強さ","打点","フォーム"],
-answer:1,
-explanation:"速い日はタッチ重視。"
-},
-{
-question:"競技終盤1打差。基本姿勢は？",
-choices:["励ます","余計な情報を出さない","強気発言","雑談"],
-answer:1,
-explanation:"冷静な情報管理。"
-},
-{
-question:"体調不良を訴えた場合は？",
-choices:["続行","即報告と休憩提案","無視","様子見"],
-answer:1,
-explanation:"安全配慮義務。"
-},
-{
-question:"距離杭とGPSが5y違う。どうする？",
-choices:["杭優先","GPS優先","両方説明し判断委ねる","無視"],
-answer:2,
-explanation:"情報を提示し委ねる。"
-},
-{
-question:"バンカー顎が高い。最優先は？",
-choices:["距離","高さ","脱出","強振"],
-answer:2,
-explanation:"まず脱出。"
-},
-{
-question:"強風横風ショットで重要なのは？",
-choices:["高さ","曲がり幅","番手","無視"],
-answer:1,
-explanation:"横風は曲がり幅考慮。"
-},
-{
-question:"同伴者がラインを踏みそう。どうする？",
-choices:["注意しない","やんわり声かけ","強く注意","無視"],
-answer:1,
-explanation:"雰囲気を壊さず注意。"
-},
-{
-question:"誤所から打ちそうな時は？",
-choices:["黙る","即指摘","あとで言う","任せる"],
-answer:1,
-explanation:"重大違反防止。"
-},
-{
-question:"ドッグレッグ右、林越え狙い。基本は？",
-choices:["攻め推奨","安全ルート提案","無言","強振提案"],
-answer:1,
-explanation:"成功率重視。"
-},
-{
-question:"プレーヤーが番手に迷う時は？",
-choices:["即決める","根拠提示","放置","強制"],
-answer:1,
-explanation:"データと状況共有。"
-},
-{
-question:"グリーン奥がOB。狙い所は？",
-choices:["ピン奥","ピン横","手前安全","真っ直ぐ"],
-answer:2,
-explanation:"奥は絶対避ける。"
-},
-{
-question:"暫定球宣言忘れそう。どうする？",
-choices:["黙る","宣言確認","後で伝える","無視"],
-answer:1,
-explanation:"宣言確認は重要。"
-},
-{
-question:"最も上級キャディーに必要な力は？",
-choices:["筋力","情報整理力","声量","速さ"],
-answer:1,
-explanation:"総合判断力＝情報整理力。"
-}
-
-];
-
-var master=[
-
-// 1
-{
-question:"プレーヤーの球が動いたか不明。強風下での初動は？",
-choices:[
-"無視して続行",
-"即1罰打を宣告",
-"状況確認し規則を説明",
-"後でマスター室へ報告"
-],
-answer:2,
-explanation:"まず事実確認。原因が自然現象なら罰なし。判断を急がない。"
-},
-
-// 2
-{
-question:"OBの可能性が高いが暫定球宣言を忘れて打った。結果は？",
-choices:[
-"暫定扱いになる",
-"元の球優先",
-"新しい球がインプレー",
-"無効になる"
-],
-answer:2,
-explanation:"宣言なしは暫定球にならず、新球がインプレー。"
-},
-
-// 3
-{
-question:"救済エリアにドロップ後、2回ともエリア外に転がった場合は？",
-choices:[
-"そのままプレー",
-"再ドロップ",
-"プレースする",
-"1罰打追加"
-],
-answer:2,
-explanation:"2回失敗後はプレース。"
-},
-
-// 4
-{
-question:"同伴競技者が重大な規則違反に気づいていない。どうする？",
-choices:[
-"黙る",
-"本人へ事実確認を促す",
-"後で伝える",
-"無視する"
-],
-answer:1,
-explanation:"競技では事実確認を促す義務的配慮が必要。"
-},
-
-// 5
-{
-question:"グリーン上でラインを踏んでしまった。現在の規則では？",
-choices:[
-"2罰打",
-"1罰打",
-"罰なし",
-"失格"
-],
-answer:2,
-explanation:"現在は罰なし。ただしマナー上の問題はある。"
-},
-
-// 6
-{
-question:"雷鳴確認。競技委員の指示前でもキャディーが取るべき行動は？",
-choices:[
-"指示待ち",
-"自己判断で安全確保提案",
-"続行促進",
-"無視"
-],
-answer:1,
-explanation:"安全配慮は最優先。"
-},
-
-// 7
-{
-question:"プレーヤーがクラブ本数超過に気付いた。正しい処置は？",
-choices:[
-"罰なしで続行",
-"即失格",
-"超過分を宣言し罰打適用",
-"黙って抜く"
-],
-answer:2,
-explanation:"超過クラブは罰打（最大4打）。"
-},
-
-// 8
-{
-question:"球が自分のバッグに偶然当たった場合は？",
-choices:[
-"罰なし",
-"1罰打",
-"2罰打",
-"失格"
-],
-answer:1,
-explanation:"偶然でもプレーヤー側に当たれば1罰打。"
-},
-
-// 9
-{
-question:"プレーヤーが感情的になり規則を無視しようとしている。最善は？",
-choices:[
-"強く制止",
-"共感しつつ規則を冷静に説明",
-"放置",
-"委員へ即通報のみ"
-],
-answer:1,
-explanation:"感情と規則の両立が上級キャディーの仕事。"
-},
-
-// 10
-{
-question:"最終ホール1打差首位。キャディーとして最も重要なのは？",
-choices:[
-"攻めさせる",
-"情報を最小限に整理し冷静維持",
-"強く鼓舞する",
-"観客を気にする"
-],
-answer:1,
-explanation:"終盤は情報過多を避け、冷静維持が最重要。"
-}
-
-];
-
-// =====================
-function showMenu(){
-let html="<h1>⛳ CADDIE QUEST PRO</h1>";
-html+="<button onclick='nameInput()'>▶ ゲーム開始</button>";
-html+="<button onclick='showAdminLogin()'>🔒 管理者</button>";
-document.getElementById("gameArea").innerHTML=html;
-}
-
-// =====================
-function nameInput(){
-let html="<h2>名前を入力</h2>";
-html+="<input id='nameBox' style='padding:10px;width:90%;'><br><br>";
-html+="<button onclick='selectLevel()'>次へ</button>";
-document.getElementById("gameArea").innerHTML=html;
-}
-
-function selectLevel(){
-playerName=document.getElementById("nameBox").value;
-let html="<h2>レベル選択</h2>";
-html+="<button onclick='startLevel(\"beginner\")'>初級</button>";
-html+="<button onclick='startLevel(\"intermediate\")'>中級</button>";
-html+="<button onclick='startLevel(\"advanced\")'>上級</button>";
-if(progress.beginner&&progress.intermediate&&progress.advanced){
-html+="<button onclick='startLevel(\"master\")'>🔥 超上級</button>";
-}
-document.getElementById("gameArea").innerHTML=html;
-}
-
-// =====================
-function startLevel(level){
-currentLevel=level;
-currentQuestion=0;
-score=0;
-if(level==="beginner")quizData=beginner;
-if(level==="intermediate")quizData=intermediate;
-if(level==="advanced")quizData=advanced;
-if(level==="master")quizData=master;
-loadQuestion();
-}
-
-// =====================
-function loadQuestion(){
-let q=quizData[currentQuestion];
-let options=[];
-for(let i=0;i<q.choices.length;i++){
-options.push({text:q.choices[i],correct:i===q.answer});
-}
-shuffleArray(options);
-
-let html="<h2>第"+(currentQuestion+1)+"問</h2>";
-html+="<p>"+q.question+"</p>";
-
-for(let i=0;i<options.length;i++){
-html+="<button class='choice' onclick='checkAnswer("+i+")' id='btn"+i+"'>"+options[i].text+"</button>";
-}
-
-html+="<div id='feedback'></div>";
-document.getElementById("gameArea").innerHTML=html;
-
-window.currentOptions=options;
-}
-
-// =====================
-function checkAnswer(index){
-let buttons=document.querySelectorAll(".choice");
-buttons.forEach((btn,i)=>{
-btn.disabled=true;
-if(window.currentOptions[i].correct){
-btn.classList.add("correct");
-}
-if(i===index && !window.currentOptions[i].correct){
-btn.classList.add("wrong");
-}
-});
-if(window.currentOptions[index].correct){score++;}
-setTimeout(nextQuestion,1000);
-}
-
-// =====================
-function nextQuestion(){
-currentQuestion++;
-if(currentQuestion<quizData.length){
-loadQuestion();
-}else{
-showResult();
-}
-}
-
-// =====================
-function showResult(){
-let rate=Math.round((score/quizData.length)*100);
-let rank=getRank(rate);
-
-if(rate>=70){
-progress[currentLevel]=true;
-localStorage.setItem("caddieProgress",JSON.stringify(progress));
-}
-
-let resultData={
-name:playerName,
-level:currentLevel,
-score:score,
-total:quizData.length,
-rate:rate,
-rank:rank,
-date:new Date().toLocaleString()
-};
-
-logs.push(resultData);
-localStorage.setItem("caddieLogs",JSON.stringify(logs));
-
-sendToGoogle(resultData);
-
-let html="<h1>結果</h1>";
-html+="<p>"+score+"/"+quizData.length+"</p>";
-html+="<h2>"+rate+"%</h2>";
-html+="<h2>"+rank+"</h2>";
-html+="<button onclick='showMenu()'>メニューへ</button>";
-
-document.getElementById("gameArea").innerHTML=html;
-}
-
-// =====================
-// Google送信
-// =====================
-function sendToGoogle(data){
-if(GOOGLE_SCRIPT_URL==="ここにGASのURLを貼る")return;
-fetch(GOOGLE_SCRIPT_URL,{
-method:"POST",
-mode:"no-cors",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify(data)
-});
-}
-
-// =====================
-// 管理者ページ
-// =====================
-function showAdminLogin(){
-let html="<h2>管理者ログイン</h2>";
-html+="<input type='password' id='adminPass' placeholder='パスワード'><br><br>";
-html+="<button onclick='checkAdmin()'>ログイン</button>";
-document.getElementById("gameArea").innerHTML=html;
-}
-
-function checkAdmin(){
-if(document.getElementById("adminPass").value==="admin123"){
-showAdmin();
-}else{
-alert("パスワード違います");
-}
-}
-
-function showAdmin(){
-let html="<h2>成績一覧</h2>";
-logs.forEach(log=>{
-html+="<p>"+log.date+" | "+log.name+" | "+log.level+" | "+log.rate+"% | "+log.rank+"</p>";
-});
-html+="<button onclick='showMenu()'>戻る</button>";
-document.getElementById("gameArea").innerHTML=html;
-}
-
-// =====================
-showMenu();
-
-</script>
+
+  // =====================
+  // ★ ランク判定
+  // =====================
+  function getRank(rate){
+    if(rate===100)return "👑 SSS";
+    if(rate>=90)return "🏆 S";
+    if(rate>=80)return "🥇 A";
+    if(rate>=70)return "🥈 B";
+    if(rate>=60)return "🥉 C";
+    return "🔰 D";
+  }
+
+  // =====================
+  // 問題データ
+  // =====================
+  const beginner = [
+    {question:"キャディーの基本姿勢として最も重要なのは？",
+    choices:["スピード","笑顔と礼儀","距離感覚","声量"],
+    answer:1, explanation:"第一印象は笑顔と礼儀で決まる。"},
+
+    {question:"ティーグラウンドで最初に確認するのは？",
+    choices:["風向き","ピン位置","使用ティー","前組の位置"],
+    answer:3, explanation:"安全確認が最優先。"},
+
+    {question:"残り距離を伝える時に必要なのは？",
+    choices:["自信","勘","正確な計測","経験則のみ"],
+    answer:2, explanation:"正確な距離が基本。"},
+
+    {question:"バンカー均しで正しいのは？",
+    choices:["足跡だけ","全体均す","放置","レーキ立てる"],
+    answer:1, explanation:"全体を丁寧に均す。"},
+
+    {question:"OBの正式名称は？",
+    choices:["Out Ball","Official Boundary","Out of Bounds","Outside Birdie"],
+    answer:2, explanation:"Out of Boundsの略。"},
+
+    {question:"グリーン上で走って良い？",
+    choices:["OK","状況次第","基本NG","急げば可"],
+    answer:2, explanation:"芝保護のため走らない。"},
+
+    {question:"お客様のクラブ確認はいつ？",
+    choices:["前日","常時","ショット前","終わってから"],
+    answer:2, explanation:"渡す前に必ず確認。"},
+
+    {question:"プレーファストの基本は？",
+    choices:["急がせる","準備の徹底","無言","走る"],
+    answer:1, explanation:"準備を整えることが重要。"},
+
+    {question:"ボールマーク修復は誰の仕事？",
+    choices:["キャディー","お客様","見つけた人","全員"],
+    answer:3, explanation:"見つけた人が直すのがマナー。"},
+
+    {question:"雨天時優先すべきは？",
+    choices:["速度","安全","売上","演出"],
+    answer:1, explanation:"安全最優先。"}
+  ];
+
+  const intermediate = [
+    {question:"向かい風5m、150yの目安は？",
+    choices:["そのまま","1番手上げ","2番手上げ","下げる"],
+    answer:1, explanation:"基本は1番手上げ。"},
+
+    {question:"フォロー風の注意点は？",
+    choices:["飛ばない","止まりにくい","曲がる","短くなる"],
+    answer:1, explanation:"ランが出る。"},
+
+    {question:"硬いグリーンの狙いは？",
+    choices:["奥","ピン","手前","無視"],
+    answer:2, explanation:"手前から攻める。"},
+
+    {question:"誤球防止で重要なのは？",
+    choices:["色確認","番号確認","メーカー確認","全部"],
+    answer:3, explanation:"全確認が基本。"},
+
+    {question:"雷鳴が聞こえたら？",
+    choices:["続行","様子見","避難提案","急ぐ"],
+    answer:2, explanation:"即安全確保。"},
+
+    {question:"深いラフの番手選択は？",
+    choices:["上げる","下げる","変えない","強振"],
+    answer:1, explanation:"脱出優先で下げる判断も重要。"},
+
+    {question:"下りパットで重要なのは？",
+    choices:["強く","弱く","真っ直ぐ","無視"],
+    answer:1, explanation:"タッチ重視。"},
+
+    {question:"競技で距離計は？",
+    choices:["自由","禁止","条件付き可","無関係"],
+    answer:2, explanation:"ローカルルール確認必須。"},
+
+    {question:"暫定球宣言が無い場合？",
+    choices:["有効","無効","後でOK","無視"],
+    answer:1, explanation:"宣言なしは暫定球にならない。"},
+
+    {question:"球探し制限時間は？",
+    choices:["3分","5分","2分","無制限"],
+    answer:0, explanation:"3分ルール。"},
+
+    {question:"アンプレ宣言は誰？",
+    choices:["キャディー","同伴者","本人","競技委員"],
+    answer:2, explanation:"プレーヤー本人のみ。"},
+
+    {question:"打順の基本は？",
+    choices:["若い順","遠い順","速い順","申告順"],
+    answer:1, explanation:"ホールから遠い順。"},
+
+    {question:"ピンを抜く判断は？",
+    choices:["必ず抜く","必ず立てる","状況次第","無視"],
+    answer:2, explanation:"現在は立てたまま可。"},
+
+    {question:"傾斜地での助言は？",
+    choices:["強く","通常通り","1番手上げ","状況説明"],
+    answer:3, explanation:"傾斜説明が重要。"},
+
+    {question:"林の中で優先は？",
+    choices:["距離","方向","脱出","ピン"],
+    answer:2, explanation:"脱出優先。"},
+
+    {question:"朝露グリーンは？",
+    choices:["速い","遅い","普通","読めない"],
+    answer:1, explanation:"重くなる傾向。"},
+
+    {question:"競技中アドバイス範囲は？",
+    choices:["全面OK","禁止","規則内","自由"],
+    answer:2, explanation:"規則内のみ可。"},
+
+    {question:"打球が他人に当たったら？",
+    choices:["無効","罰","原則そのまま","打ち直し"],
+    answer:2, explanation:"原則そのまま。"},
+
+    {question:"池越え心理は？",
+    choices:["強くなる","弱くなる","変わらない","無関係"],
+    answer:1, explanation:"ショートしやすい。"},
+
+    {question:"プレーファスト最大要因は？",
+    choices:["走る","準備","声出し","急がせる"],
+    answer:1, explanation:"事前準備。"}
+  ];
+
+  // ---------- 上級20問（実戦ケース） ----------
+  const advanced = [
+    {question:"競技中、プレーヤーが誤った距離を信じかけている。どう対応する？",
+    choices:["黙る","即座に訂正","あとで伝える","同調する"],
+    answer:1, explanation:"誤情報は即訂正が基本。"},
+
+    {question:"残り150y、強いフォロー風。適切な提案は？",
+    choices:["1番手上げる","1番手下げる","変えない","強振提案"],
+    answer:1, explanation:"フォローは番手を下げる判断。"},
+
+    {question:"下り5mのスライスライン。最重要要素は？",
+    choices:["強さ","曲がり幅","距離感","真っ直ぐ打たせる"],
+    answer:2, explanation:"下りは距離感が最優先。"},
+
+    {question:"プレーヤーが苛立っている時の対応は？",
+    choices:["理論説明","共感し落ち着かせる","無視","叱る"],
+    answer:1, explanation:"心理サポートも役割。"},
+
+    {question:"前組と2ホール空いた。まず何をする？",
+    choices:["急がせる","状況共有と準備促進","マスター室無視","雑談"],
+    answer:1, explanation:"冷静に状況共有。"},
+
+    {question:"深いラフからピン狙い。最適助言は？",
+    choices:["狙わせる","安全サイド提案","強振","無言"],
+    answer:1, explanation:"リスク管理が上級判断。"},
+
+    {question:"池越えショットで迷い。最優先は？",
+    choices:["挑戦させる","成功確率共有","急がせる","無視"],
+    answer:1, explanation:"確率提示がプロ。"},
+
+    {question:"グリーンが極端に速い日。何を強調する？",
+    choices:["曲がり","強さ","打点","フォーム"],
+    answer:1, explanation:"速い日はタッチ重視。"},
+
+    {question:"競技終盤1打差。基本姿勢は？",
+    choices:["励ます","余計な情報を出さない","強気発言","雑談"],
+    answer:1, explanation:"冷静な情報管理。"},
+
+    {question:"体調不良を訴えた場合は？",
+    choices:["続行","即報告と休憩提案","無視","様子見"],
+    answer:1, explanation:"安全配慮義務。"},
+
+    {question:"距離杭とGPSが5y違う。どうする？",
+    choices:["杭優先","GPS優先","両方説明し判断委ねる","無視"],
+    answer:2, explanation:"情報を提示し委ねる。"},
+
+    {question:"バンカー顎が高い。最優先は？",
+    choices:["距離","高さ","脱出","強振"],
+    answer:2, explanation:"まず脱出。"},
+
+    {question:"強風横風ショットで重要なのは？",
+    choices:["高さ","曲がり幅","番手","無視"],
+    answer:1, explanation:"横風は曲がり幅考慮。"},
+
+    {question:"同伴者がラインを踏みそう。どうする？",
+    choices:["注意しない","やんわり声かけ","強く注意","無視"],
+    answer:1, explanation:"雰囲気を壊さず注意。"},
+
+    {question:"誤所から打ちそうな時は？",
+    choices:["黙る","即指摘","あとで言う","任せる"],
+    answer:1, explanation:"重大違反防止。"},
+
+    {question:"ドッグレッグ右、林越え狙い。基本は？",
+    choices:["攻め推奨","安全ルート提案","無言","強振提案"],
+    answer:1, explanation:"成功率重視。"},
+
+    {question:"プレーヤーが番手に迷う時は？",
+    choices:["即決める","根拠提示","放置","強制"],
+    answer:1, explanation:"データと状況共有。"},
+
+    {question:"グリーン奥がOB。狙い所は？",
+    choices:["ピン奥","ピン横","手前安全","真っ直ぐ"],
+    answer:2, explanation:"奥は絶対避ける。"},
+
+    {question:"暫定球宣言忘れそう。どうする？",
+    choices:["黙る","宣言確認","後で伝える","無視"],
+    answer:1, explanation:"宣言確認は重要。"},
+
+    {question:"最も上級キャディーに必要な力は？",
+    choices:["筋力","情報整理力","声量","速さ"],
+    answer:1, explanation:"総合判断力＝情報整理力。"}
+  ];
+
+  const master = [
+    {question:"プレーヤーの球が動いたか不明。強風下での初動は？",
+    choices:["無視して続行","即1罰打を宣告","状況確認し規則を説明","後でマスター室へ報告"],
+    answer:2, explanation:"まず事実確認。原因が自然現象なら罰なし。判断を急がない。"},
+
+    {question:"OBの可能性が高いが暫定球宣言を忘れて打った。結果は？",
+    choices:["暫定扱いになる","元の球優先","新しい球がインプレー","無効になる"],
+    answer:2, explanation:"宣言なしは暫定球にならず、新球がインプレー。"},
+
+    {question:"救済エリアにドロップ後、2回ともエリア外に転がった場合は？",
+    choices:["そのままプレー","再ドロップ","プレースする","1罰打追加"],
+    answer:2, explanation:"2回失敗後はプレース。"},
+
+    {question:"同伴競技者が重大な規則違反に気づいていない。どうする？",
+    choices:["黙る","本人へ事実確認を促す","後で伝える","無視する"],
+    answer:1, explanation:"競技では事実確認を促す配慮が必要。"},
+
+    {question:"グリーン上でラインを踏んでしまった。現在の規則では？",
+    choices:["2罰打","1罰打","罰なし","失格"],
+    answer:2, explanation:"現在は罰なし。ただしマナー上の問題はある。"},
+
+    {question:"雷鳴確認。競技委員の指示前でもキャディーが取るべき行動は？",
+    choices:["指示待ち","自己判断で安全確保提案","続行促進","無視"],
+    answer:1, explanation:"安全配慮は最優先。"},
+
+    {question:"プレーヤーがクラブ本数超過に気付いた。正しい処置は？",
+    choices:["罰なしで続行","即失格","超過分を宣言し罰打適用","黙って抜く"],
+    answer:2, explanation:"超過クラブは罰打（最大4打）。"},
+
+    {question:"球が自分のバッグに偶然当たった場合は？",
+    choices:["罰なし","1罰打","2罰打","失格"],
+    answer:1, explanation:"偶然でもプレーヤー側に当たれば1罰打。"},
+
+    {question:"プレーヤーが感情的になり規則を無視しようとしている。最善は？",
+    choices:["強く制止","共感しつつ規則を冷静に説明","放置","委員へ即通報のみ"],
+    answer:1, explanation:"感情と規則の両立が上級キャディーの仕事。"},
+
+    {question:"最終ホール1打差首位。キャディーとして最も重要なのは？",
+    choices:["攻めさせる","情報を最小限に整理し冷静維持","強く鼓舞する","観客を気にする"],
+    answer:1, explanation:"終盤は情報過多を避け、冷静維持が最重要。"}
+  ];
+
+  // =====================
+  function showMenu(){
+    let html = "<h1>⛳ CADDIE QUEST PRO</h1>";
+    html += "<button onclick='nameInput()'>▶ ゲーム開始</button>";
+    html += "<button onclick='showAdminLogin()'>🔒 管理者</button>";
+    document.getElementById("gameArea").innerHTML = html;
+  }
+
+  // =====================
+  function nameInput(){
+    let html = "<h2>名前を入力</h2>";
+    html += "<input id='nameBox' placeholder='例：山田太郎' style='padding:12px;width:90%;font-size:18px;'><br><br>";
+    html += "<button onclick='selectLevel()'>次へ</button>";
+    document.getElementById("gameArea").innerHTML = html;
+
+    // iPhoneでの入力をスムーズに
+    setTimeout(() => {
+      const el = document.getElementById("nameBox");
+      if(el) el.focus();
+    }, 0);
+  }
+
+  function selectLevel(){
+    const el = document.getElementById("nameBox");
+    playerName = (el ? el.value : "").trim();
+
+    if(!playerName){
+      alert("名前を入力してください");
+      return;
+    }
+
+    let html = "<h2>レベル選択</h2>";
+    html += "<button onclick='startLevel(\"beginner\")'>初級</button>";
+    html += "<button onclick='startLevel(\"intermediate\")'>中級</button>";
+    html += "<button onclick='startLevel(\"advanced\")'>上級</button>";
+    if(progress.beginner && progress.intermediate && progress.advanced){
+      html += "<button onclick='startLevel(\"master\")'>🔥 超上級</button>";
+    }
+    document.getElementById("gameArea").innerHTML = html;
+  }
+
+  // =====================
+  function startLevel(level){
+    currentLevel = level;
+    currentQuestion = 0;
+    score = 0;
+
+    if(level==="beginner") quizData = beginner;
+    if(level==="intermediate") quizData = intermediate;
+    if(level==="advanced") quizData = advanced;
+    if(level==="master") quizData = master;
+
+    loadQuestion();
+  }
+
+  // =====================
+  function loadQuestion(){
+    let q = quizData[currentQuestion];
+    let options = [];
+    for(let i=0;i<q.choices.length;i++){
+      options.push({text:q.choices[i], correct:i===q.answer});
+    }
+    shuffleArray(options);
+
+    let html = "<h2>第"+(currentQuestion+1)+"問</h2>";
+    html += "<p>"+q.question+"</p>";
+
+    for(let i=0;i<options.length;i++){
+      html += "<button class='choice' onclick='checkAnswer("+i+")' id='btn"+i+"'>"+options[i].text+"</button>";
+    }
+
+    html += "<div id='feedback'></div>";
+    document.getElementById("gameArea").innerHTML = html;
+
+    window.currentOptions = options;
+  }
+
+  // =====================
+  function checkAnswer(index){
+    let buttons = document.querySelectorAll(".choice");
+    buttons.forEach((btn,i)=>{
+      btn.disabled = true;
+      if(window.currentOptions[i].correct){
+        btn.classList.add("correct");
+      }
+      if(i===index && !window.currentOptions[i].correct){
+        btn.classList.add("wrong");
+      }
+    });
+
+    if(window.currentOptions[index].correct) score++;
+    setTimeout(nextQuestion, 700);
+  }
+
+  // =====================
+  function nextQuestion(){
+    currentQuestion++;
+    if(currentQuestion < quizData.length){
+      loadQuestion();
+    } else {
+      showResult();
+    }
+  }
+
+  // =====================
+  function showResult(){
+    let rate = Math.round((score/quizData.length)*100);
+    let rank = getRank(rate);
+
+    if(rate >= 70){
+      progress[currentLevel] = true;
+      localStorage.setItem("caddieProgress", JSON.stringify(progress));
+    }
+
+    let resultData = {
+      name: playerName,
+      level: currentLevel,
+      score: score,
+      total: quizData.length,
+      rate: rate,
+      rank: rank,
+      date: new Date().toLocaleString()
+    };
+
+    logs.push(resultData);
+    localStorage.setItem("caddieLogs", JSON.stringify(logs));
+
+    sendToGoogle(resultData);
+
+    let html = "<h1>結果</h1>";
+    html += "<p>"+score+"/"+quizData.length+"</p>";
+    html += "<h2>"+rate+"%</h2>";
+    html += "<h2>"+rank+"</h2>";
+    html += "<button onclick='showMenu()'>メニューへ</button>";
+
+    document.getElementById("gameArea").innerHTML = html;
+  }
+
+  // =====================
+  // Google送信
+  // =====================
+  function sendToGoogle(data){
+    if(GOOGLE_SCRIPT_URL === "ここにGASのURLを貼る") return;
+    fetch(GOOGLE_SCRIPT_URL, {
+      method:"POST",
+      mode:"no-cors",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify(data)
+    });
+  }
+
+  // =====================
+  // 管理者ページ
+  // =====================
+  function showAdminLogin(){
+    let html="<h2>管理者ログイン</h2>";
+    html+="<input type='password' id='adminPass' placeholder='パスワード' style='padding:12px;width:90%;font-size:18px;'><br><br>";
+    html+="<button onclick='checkAdmin()'>ログイン</button>";
+    html+="<button onclick='showMenu()'>戻る</button>";
+    document.getElementById("gameArea").innerHTML=html;
+  }
+
+  function checkAdmin(){
+    if(document.getElementById("adminPass").value==="admin123"){
+      showAdmin();
+    }else{
+      alert("パスワード違います");
+    }
+  }
+
+  function showAdmin(){
+    let html="<h2>成績一覧</h2>";
+    if(!logs.length){
+      html += "<p>まだ記録がありません</p>";
+    }else{
+      logs.slice().reverse().forEach(log=>{
+        html += "<p>"+log.date+" | "+log.name+" | "+log.level+" | "+log.rate+"% | "+log.rank+"</p>";
+      });
+    }
+    html+="<button onclick='showMenu()'>戻る</button>";
+    document.getElementById("gameArea").innerHTML=html;
+  }
+
+  // =====================
+  showMenu();
+  </script>
 </body>
 </html>
