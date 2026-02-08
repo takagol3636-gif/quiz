@@ -77,6 +77,26 @@
     }
     .explainTitle{ font-weight:700; margin-bottom:8px; }
     .muted{ opacity:0.85; font-size:14px; text-align:center; }
+
+    /* ===== 塩嶺CCモード用（追加） ===== */
+    .holeImgWrap{
+      margin:10px 0 12px;
+      text-align:center;
+    }
+    .holeImg{
+      max-width:100%;
+      height:auto;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,0.18);
+      display:block;
+      margin:0 auto;
+    }
+    .smallNote{
+      font-size:12px;
+      opacity:0.8;
+      margin-top:6px;
+      text-align:center;
+    }
   </style>
 </head>
 
@@ -147,11 +167,12 @@
     if(level==="intermediate") return "中級";
     if(level==="advanced") return "上級";
     if(level==="master") return "🔥 超上級";
+    if(level==="shionre") return "🏞 塩嶺CC専用";
     return level;
   }
 
   // =====================
-  // 問題データ（あなたの元データ：explanation入りなのでOK）
+  // 問題データ（既存）
   // =====================
   const beginner = [
     {question:"キャディーの基本姿勢として最も重要なのは？",
@@ -402,6 +423,186 @@
   ];
 
   // =====================
+  // ===== 塩嶺CC専用モード（追加） =====
+  // 各ホールに holeImg を付けて、問題画面に画像を表示します
+  // ※画像URLは差し替えやすいように各問題の holeImg に入れてあります
+  // =====================
+
+  const shionre_shirakaba = [
+    {question:"【しらかば1番】ティーショットで最も注意喚起すべきエリアはどこ？",
+     choices:["右サイド","左サイド（OB方向）","グリーン奥","ティー前方バンカー"],
+     answer:1,
+     explanation:"打ち下ろしで距離が出やすく、左に流れるとOBになりやすい。打ち下ろし＝安全ではない点を事前に共有。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2016/12/shira-map01.jpg"
+    },
+    {question:"【しらかば2番】このホールでプレー前に必ず確認しておくべきことは？",
+     choices:["ピン位置","グリーン傾斜","前組の位置（安全確認）","使用クラブ"],
+     answer:2,
+     explanation:"ブラインド要素があり打ち込み事故が起こりやすい。安全確認は距離案内より優先。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2016/12/shira-map02-1.jpg"
+    },
+    {question:"【しらかば3番（ロング）】セカンドで特に警戒すべきのは？",
+     choices:["右OB","左クロスバンカー","グリーン手前の池","正面の林"],
+     answer:1,
+     explanation:"距離を出そうとすると左のクロスバンカーに捕まりやすい。欲張らず“次を打ちやすい場所”へ。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2016/12/shira-map03-1.jpg"
+    },
+    {question:"【しらかば4番】池越えの砲台グリーン。最も安全な基本戦略は？",
+     choices:["ピンを正確に狙う","グリーン左サイド狙い","グリーンセンター狙い","池手前に刻む"],
+     answer:2,
+     explanation:"ピン狙い過多は池・バンカーのリスクが増える。“まず乗せる”を優先しセンター狙いが基本。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2016/12/shira-map04-1.jpg"
+    },
+    {question:"【しらかば5番】セカンドが極端に難しくなるミスは？",
+     choices:["右サイド","左への引っかけ","フェアウェイ中央","手前刻み"],
+     answer:1,
+     explanation:"左に外すとグリーンへのラインが消えやすい。ティーショット時点で“左NG”を明確に。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2016/12/shira-map05-1.jpg"
+    },
+    {question:"【しらかば6番】ティーショットで最も避けたい球筋は？",
+     choices:["軽いドロー","フェード","スライス・押し出し","低弾道"],
+     answer:2,
+     explanation:"右サイドにバンカーと林がありスライスは即トラブル。狙いは左サイドが無難。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2016/12/shira-map06-1.jpg"
+    },
+    {question:"【しらかば7番（ショート）】このホールで最も重視すべき要素は？",
+     choices:["方向性","高さ","距離感（タッチ）","スピン量"],
+     answer:2,
+     explanation:"横長で奥行きが浅い。ショートもオーバーも大きなミスになるため距離感最優先。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2016/12/shira-map07-1.jpg"
+    },
+    {question:"【しらかば8番（ロング）】セカンド地点で特に注意すべきポイントは？",
+     choices:["左OB","右前方クロスバンカー","グリーン奥","手前の池"],
+     answer:1,
+     explanation:"バンカー越えは距離が必要。無理をすると大叩きに繋がるので安全なレイアップ判断も重要。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2016/12/shira-map08-1.jpg"
+    },
+    {question:"【しらかば9番】セカンドの距離は基本どう見積もる？",
+     choices:["表示距離そのまま","1番手下げる","残り距離の約1割増し","風だけ見る"],
+     answer:2,
+     explanation:"強い打ち上げで見た目以上に距離がかかる。番手ミスを防ぐため補正を必ず共有。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2016/12/shira-map09-1.jpg"
+    },
+  ];
+
+  const shionre_rindo = [
+    {question:"【りんどう1番】ティーショットの狙い目（目標物）は？",
+     choices:["200〜220yd先の松の右","左OBギリギリ","右バンカー上","フェアウェイ中央の木"],
+     answer:0,
+     explanation:"200〜220yd先の松の右が狙い目。松越え先はブラインドになりやすいので前組確認も必須。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/rin-map01-1.jpg"
+    },
+    {question:"【りんどう2番】ティーショットの基本の安全サイドは？",
+     choices:["右サイド","左サイド","ど真ん中","右ラフ"],
+     answer:1,
+     explanation:"打ち上げで距離もある。左サイド狙いが基本。グリーン左右手前の深いバンカーに注意。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/rin-map02-1.jpg"
+    },
+    {question:"【りんどう3番】ティーショットの狙い目は？",
+     choices:["中央の檜の左","中央の檜の右","右端の白樺","左バンカー"],
+     answer:1,
+     explanation:"中央の檜の右サイドが狙い目。左OBは浅いので注意し、右サイドから攻めるのがベター。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/rin-map03.jpg"
+    },
+    {question:"【りんどう4番（難パー3）】特に厳禁とされるミスは？",
+     choices:["フック","押し出し・スライス","トップ","ダフリ"],
+     answer:1,
+     explanation:"距離があり難しい。グリーンは右に傾斜しやすく、押し出しは大きなトラブルに繋がる。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/rin-map04.jpg"
+    },
+    {question:"【りんどう5番】正面の突き抜けが起きやすい距離の目安は？",
+     choices:["150yd","200yd","250yd","300yd"],
+     answer:2,
+     explanation:"左ドッグの豪快な打ち下ろし。正面は約250ydで突き抜けるため番手・狙い目の共有が重要。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/rin-map05.jpg"
+    },
+    {question:"【りんどう6番（ショート）】狙い目として基本なのは？",
+     choices:["グリーンセンター","右奥ピン","左手前","とにかく奥"],
+     answer:0,
+     explanation:"距離は短めだが外すと寄せが難しくなる。基本はセンター狙い。読み過ぎ注意。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/rin-map06.jpg"
+    },
+    {question:"【りんどう7番】ティーショットの狙い目は？",
+     choices:["右OB際","左サイド（小屋方向）","右バンカー","ど真ん中"],
+     answer:1,
+     explanation:"右にOB。狙い目は左サイド（小屋方向）。右傾斜でランが右へ流れやすい点も注意。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/rin-map07.jpg"
+    },
+    {question:"【りんどう8番（ロング）】グリーン手前で注意すべき代表的ハザードは？",
+     choices:["左右のバンカー","池","クリーク","注意不要"],
+     answer:0,
+     explanation:"打ち上げでグリーン周りが難しい。手前左右のバンカーは深く入りやすいので番手選びに注意。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/rin-map08.jpg"
+    },
+    {question:"【りんどう9番】ティーショットの狙い目は？",
+     choices:["左バンカーの右サイド","右OBギリギリ","フェアウェイ左端","手前に刻む"],
+     answer:0,
+     explanation:"谷越えで距離のあるパー4。狙い目は左バンカー右サイド。グリーンは右傾斜のため左手前が安全。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/rin-map09.jpg"
+    },
+  ];
+
+  const shionre_suzuran = [
+    {question:"【すずらん1番】ティーショットの狙い目（目標物）は？",
+     choices:["中央の松","左バンカー","右OB際","池手前"],
+     answer:0,
+     explanation:"右ドッグレッグ。狙い目は中央の松。グリーンは奥傾斜で手前からがベター。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/suzu-map01.jpg"
+    },
+    {question:"【すずらん2番（砲台パー3）】特に注意すべき深いバンカーは？",
+     choices:["右奥","左手前（深い）","グリーン奥","バンカーは無い"],
+     answer:1,
+     explanation:"砲台で奥→手前の傾斜が強く速い。左手前バンカーは深く、入れると大きく崩れやすい。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/suzu-map02.jpg"
+    },
+    {question:"【すずらん3番】セカンドで番手選びに注意が必要な理由は？",
+     choices:["右が谷で左右ともOBが近い","池が正面にある","グリーンが受けて止まり過ぎる","バンカーが無い"],
+     answer:0,
+     explanation:"2オンも狙えるが、右が谷で左右OBが近い。無理をしない“確率”の案内が重要。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/suzu-map03.jpg"
+    },
+    {question:"【すずらん4番】飛距離が出る人のチャレンジとして案内されるルートは？",
+     choices:["池越えにチャレンジ","バンカー越え","ワンオン狙い","OB越え"],
+     answer:0,
+     explanation:"難易度の高いパー4。飛距離に自信がある場合のみ池越えも選択肢。無理強いは禁物。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/suzu-map04.jpg"
+    },
+    {question:"【すずらん5番】セカンドで特に警戒すべきのは？",
+     choices:["グリーン手前左右の深いバンカー","池","注意不要","クリーク"],
+     answer:0,
+     explanation:"打ち上げ短いパー4で砲台。グリーン手前左右のバンカーは深く、乗せる距離感が肝。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/suzu-map05.jpg"
+    },
+    {question:"【すずらん6番（ショート）】狙い目として基本なのは？",
+     choices:["グリーンセンター","右奥","左手前","とにかく奥"],
+     answer:0,
+     explanation:"打ち下ろし分を考慮して番手選び。オーバーすると寄せが難しくなるのでセンター狙いが基本。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/suzu-map06.jpg"
+    },
+    {question:"【すずらん7番】正面が突き抜ける距離の目安は？",
+     choices:["200yd","230yd","250yd","280yd"],
+     answer:2,
+     explanation:"右ドッグ。正面は約250ydで突き抜ける。方向性だけでなく距離管理も必須。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/suzu-map07.jpg"
+    },
+    {question:"【すずらん8番】セカンドで注意すべきこととして挙げられるのは？",
+     choices:["左OBが浅い＆オーバー注意","右に池がある","攻め放題","グリーンは平らで簡単"],
+     answer:0,
+     explanation:"左OBが浅いホール。さらにオーバーもトラブルになりやすいので番手選び・狙い所の共有が重要。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/suzu-map08.jpg"
+    },
+    {question:"【すずらん9番】このホールの基本の攻めサイドは？",
+     choices:["左サイド","右サイド","ど真ん中","どこでも"],
+     answer:1,
+     explanation:"右サイドから攻めるのがベター。下りで2オンもあるため打ち込み（前組）の安全確認も徹底。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/suzu-map09.jpg"
+    },
+  ];
+
+  // 27問まとめ
+  const shionre_all = [].concat(shionre_shirakaba, shionre_rindo, shionre_suzuran);
+
+  // =====================
   function showMenu(){
     const savedName = (localStorage.getItem(LS_NAME) || "").trim();
     let html = "<h1>⛳ キャディー研修用クイズ</h1>";
@@ -425,7 +626,7 @@
       return;
     }
     playerName = savedName;
-    selectLevel(); // nameBoxが無くても動くように selectLevel 内で対応済みにする
+    selectLevel();
   }
 
   // =====================
@@ -443,7 +644,6 @@
   }
 
   function selectLevel(){
-    // nameInput経由なら nameBox、メニュー経由なら localStorage の名前を使う
     const el = document.getElementById("nameBox");
     const fromInput = el ? (el.value || "").trim() : "";
     if(fromInput){
@@ -461,12 +661,17 @@
 
     let html = "<h2>レベル選択</h2>";
     html += "<div class='center'><span class='pill'>" + escapeHtml(playerName) + " さん</span></div>";
+
     html += "<button onclick='startLevel(\"beginner\")'>初級</button>";
     html += "<button onclick='startLevel(\"intermediate\")'>中級</button>";
     html += "<button onclick='startLevel(\"advanced\")'>上級</button>";
     if(progress.beginner && progress.intermediate && progress.advanced){
       html += "<button onclick='startLevel(\"master\")'>🔥 超上級</button>";
     }
+
+    /* ===== 塩嶺CC専用モード（追加） ===== */
+    html += "<button onclick='showShionreMenu()'>🏞 塩嶺CC 専用モード</button>";
+
     html += "<button class='btnGhost' onclick='nameInput()'>名前変更</button>";
     html += "<button class='btnSecondary' onclick='showMenu()'>メニューへ</button>";
     document.getElementById("gameArea").innerHTML = html;
@@ -482,6 +687,35 @@
     if(level==="intermediate") quizData = intermediate;
     if(level==="advanced") quizData = advanced;
     if(level==="master") quizData = master;
+    if(level==="shionre") quizData = shionre_all;
+
+    loadQuestion();
+  }
+
+  // =====================
+  // ===== 塩嶺CC専用モードのコース選択（追加） =====
+  // =====================
+  function showShionreMenu(){
+    currentLevel = "shionre";
+    let html = "<h2>🏞 塩嶺CC 専用モード</h2>";
+    html += "<div class='center'><span class='pill'>" + escapeHtml(playerName) + " さん</span></div>";
+    html += "<button onclick='startShionreCourse(\"shirakaba\")'>🌲 しらかば（9問）</button>";
+    html += "<button onclick='startShionreCourse(\"rindo\")'>🌸 りんどう（9問）</button>";
+    html += "<button onclick='startShionreCourse(\"suzuran\")'>🌼 すずらん（9問）</button>";
+    html += "<button onclick='startShionreCourse(\"all\")'>🏁 3コースまとめて（27問）</button>";
+    html += "<button class='btnSecondary' onclick='selectLevel()'>レベル選択へ戻る</button>";
+    document.getElementById("gameArea").innerHTML = html;
+  }
+
+  function startShionreCourse(which){
+    currentLevel = "shionre";
+    currentQuestion = 0;
+    score = 0;
+
+    if(which==="shirakaba") quizData = shionre_shirakaba;
+    if(which==="rindo") quizData = shionre_rindo;
+    if(which==="suzuran") quizData = shionre_suzuran;
+    if(which==="all") quizData = shionre_all;
 
     loadQuestion();
   }
@@ -501,6 +735,15 @@
     html += "</div>";
 
     html += "<h2>第"+(currentQuestion+1)+"問 / "+quizData.length+"</h2>";
+
+    /* ===== 塩嶺CCのときはホール画像を表示（追加） ===== */
+    if(currentLevel==="shionre" && q.holeImg){
+      html += "<div class='holeImgWrap'>";
+      html += "<img class='holeImg' src='"+q.holeImg+"' alt='ホール図' loading='lazy'>";
+      html += "<div class='smallNote'>※ホール図は塩嶺CC公式サイトのコースガイド画像を参照（研修用）</div>";
+      html += "</div>";
+    }
+
     html += "<p>"+escapeHtml(q.question)+"</p>";
 
     for(let i=0;i<options.length;i++){
@@ -508,14 +751,18 @@
     }
 
     html += "<div id='feedback'></div>";
-    html += "<button class='btnGhost' onclick='selectLevel()'>レベル選択へ戻る</button>";
+
+    // 戻るボタン（塩嶺は専用メニューへ戻す）
+    if(currentLevel==="shionre"){
+      html += "<button class='btnGhost' onclick='showShionreMenu()'>塩嶺CCメニューへ戻る</button>";
+    }else{
+      html += "<button class='btnGhost' onclick='selectLevel()'>レベル選択へ戻る</button>";
+    }
 
     document.getElementById("gameArea").innerHTML = html;
     window.currentOptions = options;
   }
 
-  // =====================
-  // ✅ 改善ポイント：回答後すぐ次へ行かず、解説を挟む（正解も分かりやすく）
   // =====================
   function checkAnswer(index){
     let q = quizData[currentQuestion];
@@ -526,13 +773,11 @@
     const isCorrect = !!picked.correct;
     if(isCorrect) score++;
 
-    // クリックしたボタンの色
     const pickedBtn = document.getElementById("btn"+index);
     if(pickedBtn){
       pickedBtn.classList.add(isCorrect ? "correct" : "wrong");
     }
 
-    // 不正解なら、正解のボタンも強調表示
     if(!isCorrect){
       buttons.forEach((btn,i)=>{
         if(window.currentOptions[i].correct){
@@ -541,10 +786,8 @@
       });
     }
 
-    // 正解テキスト（元のchoicesから）
     const correctText = q.choices[q.answer];
 
-    // 解説エリア
     let fb = "";
     fb += "<div class='explainBox'>";
     fb += "<div class='explainTitle'>" + (isCorrect ? "⭕ 正解！" : "❌ 不正解") + "</div>";
@@ -569,15 +812,16 @@
   }
 
   // =====================
-  // ✅ 改善ポイント：終了後は「名前入力」ではなく「レベル選択」へ
-  // =====================
   function showResult(){
     let rate = Math.round((score/quizData.length)*100);
     let rank = getRank(rate);
 
-    if(rate >= 70){
-      progress[currentLevel] = true;
-      localStorage.setItem("caddieProgress", JSON.stringify(progress));
+    // 塩嶺は進捗アンロック対象外（通常レベルだけ）
+    if(currentLevel!=="shionre"){
+      if(rate >= 70){
+        progress[currentLevel] = true;
+        localStorage.setItem("caddieProgress", JSON.stringify(progress));
+      }
     }
 
     let resultData = {
@@ -606,9 +850,16 @@
     html += "<div>・間違えた問題の解説をもう一度読む → 同レベル再挑戦が最短で伸びます。</div>";
     html += "</div>";
 
-    html += "<button onclick='selectLevel()'>レベル選択へ</button>";
-    html += "<button class='btnSecondary' onclick='startLevel(\""+currentLevel+"\")'>同じレベルをもう一度</button>";
-    html += "<button class='btnGhost' onclick='showMenu()'>メニューへ</button>";
+    // 塩嶺は塩嶺メニューへ戻す
+    if(currentLevel==="shionre"){
+      html += "<button onclick='showShionreMenu()'>塩嶺CCメニューへ</button>";
+      html += "<button class='btnSecondary' onclick='startLevel(\"shionre\")'>27問まとめをもう一度</button>";
+      html += "<button class='btnGhost' onclick='selectLevel()'>レベル選択へ</button>";
+    }else{
+      html += "<button onclick='selectLevel()'>レベル選択へ</button>";
+      html += "<button class='btnSecondary' onclick='startLevel(\""+currentLevel+"\")'>同じレベルをもう一度</button>";
+      html += "<button class='btnGhost' onclick='showMenu()'>メニューへ</button>";
+    }
 
     document.getElementById("gameArea").innerHTML = html;
   }
