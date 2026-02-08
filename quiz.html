@@ -1,3 +1,5 @@
+キャディー研修クイズ塩嶺モード追加版
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -203,7 +205,7 @@ h1{
     answer:2, explanation:"正確な距離が基本。"},
 
     {question:"バンカー均しで正しいのは？",
-    choices:["足跡だけ","全体均す","放置","レーキ立てる"],
+    choices:["足跡だけ均す","全体をレーキで均す","放置","打った場所だけ均す"],
     answer:1, explanation:"全体を丁寧に均す。"},
 
     {question:"OBの正式名称は？",
@@ -215,7 +217,7 @@ h1{
     answer:2, explanation:"芝保護のため走らない。"},
 
     {question:"お客様のクラブ確認はいつ？",
-    choices:["前日","常時","ショット前","終わってから"],
+    choices:["前日","常時","スタート前","終わってから"],
     answer:2, explanation:"渡す前に必ず確認。"},
 
     {question:"プレーファストの基本は？",
@@ -262,7 +264,7 @@ h1{
 
     {question:"競技で距離計は？",
     choices:["自由","禁止","条件付き可","無関係"],
-    answer:2, explanation:"ローカルルール確認必須。"},
+    answer:2, explanation:"高低差表示禁止の場合が多い。"},
 
     {question:"暫定球宣言が無い場合？",
     choices:["有効","無効","後でOK","無視"],
@@ -272,7 +274,7 @@ h1{
     choices:["3分","5分","2分","無制限"],
     answer:0, explanation:"3分ルール。"},
 
-    {question:"アンプレ宣言は誰？",
+    {question:"アンプレは誰が出来る？",
     choices:["キャディー","同伴者","本人","競技委員"],
     answer:2, explanation:"プレーヤー本人のみ。"},
 
@@ -282,7 +284,7 @@ h1{
 
     {question:"ピンを抜く判断は？",
     choices:["必ず抜く","必ず立てる","状況次第","無視"],
-    answer:2, explanation:"現在は立てたまま可。"},
+    answer:2, explanation:"現在は立てたままでもOK。"},
 
     {question:"傾斜地での助言は？",
     choices:["強く","通常通り","1番手上げ","状況説明"],
@@ -304,13 +306,16 @@ h1{
     choices:["無効","罰","原則そのまま","打ち直し"],
     answer:2, explanation:"原則そのまま。"},
 
-    {question:"池越え心理は？",
-    choices:["強くなる","弱くなる","変わらない","無関係"],
-    answer:1, explanation:"ショートしやすい。"},
+    {
+  question:"池越えの場面でキャディーが最優先で確認すべきことは？",
+  choices:["ピン位置","池までの正確な距離","グリーンの速さ","前の組との間隔"],
+  answer:1,
+  explanation:"池までの距離を正確に伝えることで、無理な判断を防ぐことができる。"
+}, // ←これ！
 
-    {question:"プレーファスト最大要因は？",
-    choices:["走る","準備","声出し","急がせる"],
-    answer:1, explanation:"事前準備。"}
+{question:"プレーファスト最大要因は？",
+ choices:["走る","準備","声出し","急がせる"],
+ answer:1, explanation:"事前準備。"}
   ];
 
   const advanced = [
@@ -486,7 +491,7 @@ h1{
      explanation:"横長で奥行きが浅い。ショートもオーバーも大きなミスになるため距離感最優先。",
      holeImg:"https://www.enrei.co.jp/wp-content/uploads/2016/12/shira-map07-1.jpg"
     },
-    {question:"【しらかば8番（ロング）】セカンド地点で特に注意すべきポイントは？",
+    {question:"【しらかば8番（ロング）】ティーショットで特に注意すべきポイントは？",
      choices:["左OB","右前方クロスバンカー","グリーン奥","手前の池"],
      answer:1,
      explanation:"バンカー越えは距離が必要。無理をすると大叩きに繋がるので安全なレイアップ判断も重要。",
@@ -508,7 +513,7 @@ h1{
      holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/rin-map01-1.jpg"
     },
     {question:"【りんどう2番】ティーショットの基本の安全サイドは？",
-     choices:["右サイド","左サイド","ど真ん中","右ラフ"],
+     choices:["右サイド","左サイド","左ラフ","右ラフ"],
      answer:1,
      explanation:"打ち上げで距離もある。左サイド狙いが基本。グリーン左右手前の深いバンカーに注意。",
      holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/rin-map02-1.jpg"
@@ -544,13 +549,13 @@ h1{
      holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/rin-map07.jpg"
     },
     {question:"【りんどう8番（ロング）】グリーン手前で注意すべき代表的ハザードは？",
-     choices:["左右のバンカー","池","クリーク","注意不要"],
+     choices:["左のOB","池","左右のバンカー","注意不要"],
      answer:0,
-     explanation:"打ち上げでグリーン周りが難しい。手前左右のバンカーは深く入りやすいので番手選びに注意。",
+     explanation:"打ち上げでグリーン周りが難しい。左OBが浅いので注意。",
      holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/rin-map08.jpg"
     },
     {question:"【りんどう9番】ティーショットの狙い目は？",
-     choices:["左バンカーの右サイド","右OBギリギリ","フェアウェイ左端","手前に刻む"],
+     choices:["左バンカーの右サイド","右OBギリギリ","フェアウェイ右サイド","手前に刻む"],
      answer:0,
      explanation:"谷越えで距離のあるパー4。狙い目は左バンカー右サイド。グリーンは右傾斜のため左手前が安全。",
      holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/rin-map09.jpg"
@@ -564,10 +569,10 @@ h1{
      explanation:"右ドッグレッグ。狙い目は中央の松。グリーンは奥傾斜で手前からがベター。",
      holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/suzu-map01.jpg"
     },
-    {question:"【すずらん2番（砲台パー3）】特に注意すべき深いバンカーは？",
-     choices:["右奥","左手前（深い）","グリーン奥","バンカーは無い"],
+    {question:"【すずらん2番（砲台パー3）】特に注意すべき点は？",
+     choices:["右奥","左手前（深い）","グリーン奥","グリーンの傾斜"],
      answer:1,
-     explanation:"砲台で奥→手前の傾斜が強く速い。左手前バンカーは深く、入れると大きく崩れやすい。",
+     explanation:"グリーンの傾斜が強く、奥から早い。",
      holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/suzu-map02.jpg"
     },
     {question:"【すずらん3番】セカンドで番手選びに注意が必要な理由は？",
@@ -595,9 +600,9 @@ h1{
      holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/suzu-map06.jpg"
     },
     {question:"【すずらん7番】正面が突き抜ける距離の目安は？",
-     choices:["200yd","230yd","250yd","280yd"],
+     choices:["280yd","200yd","230yd","250yd"],
      answer:2,
-     explanation:"右ドッグ。正面は約250ydで突き抜ける。方向性だけでなく距離管理も必須。",
+     explanation:"右ドッグ。正面は約230ydで突き抜ける。方向性だけでなく距離管理も必須。",
      holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/suzu-map07.jpg"
     },
     {question:"【すずらん8番】セカンドで注意すべきこととして挙げられるのは？",
@@ -917,7 +922,13 @@ h1{
       html += "<p class='center'>まだ記録がありません</p>";
     }else{
       logs.slice().reverse().forEach(log=>{
-        html += "<p>"+escapeHtml(log.date)+" | "+escapeHtml(log.name)+" | "+escapeHtml(log.level)+" | "+log.rate+"% | "+escapeHtml(log.rank)+"</p>";
+       html += "<p>"
+  + escapeHtml(log.date) + " | "
+  + escapeHtml(log.name) + " | "
+  + escapeHtml(levelLabel(log.level)) + " | "
+  + log.rate + "% | "
+  + escapeHtml(log.rank)
+  + "</p>";
       });
     }
     html+="<button onclick='showMenu()'>戻る</button>";
@@ -925,13 +936,14 @@ h1{
   }
 
   function escapeHtml(str){
-    return String(str)
-      .replaceAll("&","&amp;")
-      .replaceAll("<","&lt;")
-      .replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;")
-      .replaceAll("'","&#039;");
-  }
+  return String(str).replace(/[&<>"']/g, (m) => ({
+    "&":"&amp;",
+    "<":"&lt;",
+    ">":"&gt;",
+    '"':"&quot;",
+    "'":"&#039;"
+  }[m]));
+}
 
   // =====================
   showMenu();
