@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CADDIE QUEST PRO</title>
+  <title>キャディー研修用クイズ</title>
 
   <style>
     body{
       margin:0;
-      font-family:sans-serif;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", sans-serif;
       background:#0b3d0b;
       color:white;
       text-align:center;
@@ -22,34 +22,68 @@
       background:rgba(0,0,0,0.85);
       padding:20px;
       border-radius:12px;
+      text-align:left;
     }
+    h1,h2{ text-align:center; margin: 0 0 12px 0; }
+    p{ line-height:1.6; }
+
     button{
       width:100%;
       padding:15px;
       margin:8px 0;
       font-size:16px;
       border:none;
-      border-radius:8px;
+      border-radius:10px;
       background:#1b5e20;
       color:white;
       -webkit-tap-highlight-color: transparent;
+      cursor:pointer;
     }
-    button:disabled{opacity:0.6}
-    .correct{background:green !important;}
-    .wrong{background:red !important;}
+    button:disabled{opacity:0.6; cursor:not-allowed;}
+    .btnSecondary{ background:#2c2c2c; }
+    .btnGhost{ background:transparent; border:1px solid rgba(255,255,255,0.25); }
+
+    .correct{background:#1f7a1f !important;}
+    .wrong{background:#8b1a1a !important;}
+    .revealCorrect{ outline:2px solid rgba(255,255,255,0.45); }
+
     #adminPanel{display:none;}
+
     input{
+      width:90%;
+      padding:12px;
+      font-size:18px;
       box-sizing:border-box;
       border-radius:10px;
       border:none;
       outline:none;
     }
+
+    .pill{
+      display:inline-block;
+      padding:6px 10px;
+      border-radius:999px;
+      background:rgba(255,255,255,0.12);
+      font-size:13px;
+      margin:0 6px 10px 0;
+    }
+    .center{ text-align:center; }
+
+    .explainBox{
+      margin-top:12px;
+      padding:14px;
+      border-radius:12px;
+      background:rgba(255,255,255,0.08);
+    }
+    .explainTitle{ font-weight:700; margin-bottom:8px; }
+    .muted{ opacity:0.85; font-size:14px; text-align:center; }
   </style>
 </head>
 
 <body>
   <div class="container">
     <div class="card" id="gameArea"></div>
+    <p class="muted">不正解時：正解強調＋解説 → 次へ｜終了後：レベル選択へ戻る</p>
   </div>
 
   <script>
@@ -61,7 +95,12 @@
   const GOOGLE_SCRIPT_URL = "ここにGASのURLを貼る";
 
   // =====================
-  // 変数（★head内に書いてたJSは全部ここへ移動）
+  // localStorage keys
+  // =====================
+  const LS_NAME = "caddieQuiz_name";
+
+  // =====================
+  // 変数
   // =====================
   let currentLevel = "";
   let currentQuestion = 0;
@@ -103,8 +142,16 @@
     return "🔰 D";
   }
 
+  function levelLabel(level){
+    if(level==="beginner") return "初級";
+    if(level==="intermediate") return "中級";
+    if(level==="advanced") return "上級";
+    if(level==="master") return "🔥 超上級";
+    return level;
+  }
+
   // =====================
-  // 問題データ
+  // 問題データ（あなたの元データ：explanation入りなのでOK）
   // =====================
   const beginner = [
     {question:"キャディーの基本姿勢として最も重要なのは？",
@@ -230,7 +277,6 @@
     answer:1, explanation:"事前準備。"}
   ];
 
-  // ---------- 上級20問（実戦ケース） ----------
   const advanced = [
     {question:"競技中、プレーヤーが誤った距離を信じかけている。どう対応する？",
     choices:["黙る","即座に訂正","あとで伝える","同調する"],
@@ -357,10 +403,29 @@
 
   // =====================
   function showMenu(){
-    let html = "<h1>⛳ CADDIE QUEST PRO</h1>";
-    html += "<button onclick='nameInput()'>▶ ゲーム開始</button>";
-    html += "<button onclick='showAdminLogin()'>🔒 管理者</button>";
+    const savedName = (localStorage.getItem(LS_NAME) || "").trim();
+    let html = "<h1>⛳ キャディー研修用クイズ</h1>";
+    html += "<div class='center'>";
+    if(savedName){
+      html += "<span class='pill'>ようこそ： " + escapeHtml(savedName) + " さん</span>";
+      html += "<button onclick='selectLevelFromMenu()'>▶ レベル選択へ</button>";
+      html += "<button class='btnGhost' onclick='nameInput()'>✏️ 名前を変更して開始</button>";
+    }else{
+      html += "<button onclick='nameInput()'>▶ ゲーム開始</button>";
+    }
+    html += "<button class='btnSecondary' onclick='showAdminLogin()'>🔒 管理者</button>";
+    html += "</div>";
     document.getElementById("gameArea").innerHTML = html;
+  }
+
+  function selectLevelFromMenu(){
+    const savedName = (localStorage.getItem(LS_NAME) || "").trim();
+    if(!savedName){
+      nameInput();
+      return;
+    }
+    playerName = savedName;
+    selectLevel(); // nameBoxが無くても動くように selectLevel 内で対応済みにする
   }
 
   // =====================
@@ -368,9 +433,9 @@
     let html = "<h2>名前を入力</h2>";
     html += "<input id='nameBox' placeholder='例：山田太郎' style='padding:12px;width:90%;font-size:18px;'><br><br>";
     html += "<button onclick='selectLevel()'>次へ</button>";
+    html += "<button class='btnSecondary' onclick='showMenu()'>戻る</button>";
     document.getElementById("gameArea").innerHTML = html;
 
-    // iPhoneでの入力をスムーズに
     setTimeout(() => {
       const el = document.getElementById("nameBox");
       if(el) el.focus();
@@ -378,8 +443,16 @@
   }
 
   function selectLevel(){
+    // nameInput経由なら nameBox、メニュー経由なら localStorage の名前を使う
     const el = document.getElementById("nameBox");
-    playerName = (el ? el.value : "").trim();
+    const fromInput = el ? (el.value || "").trim() : "";
+    if(fromInput){
+      playerName = fromInput;
+      localStorage.setItem(LS_NAME, playerName);
+    }else{
+      const saved = (localStorage.getItem(LS_NAME) || "").trim();
+      if(saved) playerName = saved;
+    }
 
     if(!playerName){
       alert("名前を入力してください");
@@ -387,12 +460,15 @@
     }
 
     let html = "<h2>レベル選択</h2>";
+    html += "<div class='center'><span class='pill'>" + escapeHtml(playerName) + " さん</span></div>";
     html += "<button onclick='startLevel(\"beginner\")'>初級</button>";
     html += "<button onclick='startLevel(\"intermediate\")'>中級</button>";
     html += "<button onclick='startLevel(\"advanced\")'>上級</button>";
     if(progress.beginner && progress.intermediate && progress.advanced){
       html += "<button onclick='startLevel(\"master\")'>🔥 超上級</button>";
     }
+    html += "<button class='btnGhost' onclick='nameInput()'>名前変更</button>";
+    html += "<button class='btnSecondary' onclick='showMenu()'>メニューへ</button>";
     document.getElementById("gameArea").innerHTML = html;
   }
 
@@ -415,38 +491,71 @@
     let q = quizData[currentQuestion];
     let options = [];
     for(let i=0;i<q.choices.length;i++){
-      options.push({text:q.choices[i], correct:i===q.answer});
+      options.push({text:q.choices[i], correct:i===q.answer, originalIndex:i});
     }
     shuffleArray(options);
 
-    let html = "<h2>第"+(currentQuestion+1)+"問</h2>";
-    html += "<p>"+q.question+"</p>";
+    let html = "<div class='center'>";
+    html += "<span class='pill'>" + levelLabel(currentLevel) + "</span>";
+    html += "<span class='pill'>" + escapeHtml(playerName) + " さん</span>";
+    html += "</div>";
+
+    html += "<h2>第"+(currentQuestion+1)+"問 / "+quizData.length+"</h2>";
+    html += "<p>"+escapeHtml(q.question)+"</p>";
 
     for(let i=0;i<options.length;i++){
-      html += "<button class='choice' onclick='checkAnswer("+i+")' id='btn"+i+"'>"+options[i].text+"</button>";
+      html += "<button class='choice' onclick='checkAnswer("+i+")' id='btn"+i+"'>"+escapeHtml(options[i].text)+"</button>";
     }
 
     html += "<div id='feedback'></div>";
-    document.getElementById("gameArea").innerHTML = html;
+    html += "<button class='btnGhost' onclick='selectLevel()'>レベル選択へ戻る</button>";
 
+    document.getElementById("gameArea").innerHTML = html;
     window.currentOptions = options;
   }
 
   // =====================
+  // ✅ 改善ポイント：回答後すぐ次へ行かず、解説を挟む（正解も分かりやすく）
+  // =====================
   function checkAnswer(index){
+    let q = quizData[currentQuestion];
     let buttons = document.querySelectorAll(".choice");
-    buttons.forEach((btn,i)=>{
-      btn.disabled = true;
-      if(window.currentOptions[i].correct){
-        btn.classList.add("correct");
-      }
-      if(i===index && !window.currentOptions[i].correct){
-        btn.classList.add("wrong");
-      }
-    });
+    buttons.forEach((btn,i)=> btn.disabled = true);
 
-    if(window.currentOptions[index].correct) score++;
-    setTimeout(nextQuestion, 700);
+    const picked = window.currentOptions[index];
+    const isCorrect = !!picked.correct;
+    if(isCorrect) score++;
+
+    // クリックしたボタンの色
+    const pickedBtn = document.getElementById("btn"+index);
+    if(pickedBtn){
+      pickedBtn.classList.add(isCorrect ? "correct" : "wrong");
+    }
+
+    // 不正解なら、正解のボタンも強調表示
+    if(!isCorrect){
+      buttons.forEach((btn,i)=>{
+        if(window.currentOptions[i].correct){
+          btn.classList.add("correct","revealCorrect");
+        }
+      });
+    }
+
+    // 正解テキスト（元のchoicesから）
+    const correctText = q.choices[q.answer];
+
+    // 解説エリア
+    let fb = "";
+    fb += "<div class='explainBox'>";
+    fb += "<div class='explainTitle'>" + (isCorrect ? "⭕ 正解！" : "❌ 不正解") + "</div>";
+    if(!isCorrect){
+      fb += "<div style='margin-bottom:8px;'>正解：<strong>" + escapeHtml(correctText) + "</strong></div>";
+    }
+    fb += "<div>" + escapeHtml(q.explanation || "（解説が未設定です）") + "</div>";
+    fb += "<button style='margin-top:12px;' onclick='nextQuestion()'>" + ((currentQuestion+1<quizData.length) ? "次の問題へ" : "結果を見る") + "</button>";
+    fb += "</div>";
+
+    document.getElementById("feedback").innerHTML = fb;
   }
 
   // =====================
@@ -459,6 +568,8 @@
     }
   }
 
+  // =====================
+  // ✅ 改善ポイント：終了後は「名前入力」ではなく「レベル選択」へ
   // =====================
   function showResult(){
     let rate = Math.round((score/quizData.length)*100);
@@ -485,10 +596,19 @@
     sendToGoogle(resultData);
 
     let html = "<h1>結果</h1>";
-    html += "<p>"+score+"/"+quizData.length+"</p>";
-    html += "<h2>"+rate+"%</h2>";
-    html += "<h2>"+rank+"</h2>";
-    html += "<button onclick='showMenu()'>メニューへ</button>";
+    html += "<div class='center'><span class='pill'>" + levelLabel(currentLevel) + "</span></div>";
+    html += "<p class='center' style='font-size:18px;'>" + score + " / " + quizData.length + "</p>";
+    html += "<h2 class='center'>" + rate + "%</h2>";
+    html += "<h2 class='center'>" + rank + "</h2>";
+
+    html += "<div class='explainBox'>";
+    html += "<div class='explainTitle'>次のおすすめ</div>";
+    html += "<div>・間違えた問題の解説をもう一度読む → 同レベル再挑戦が最短で伸びます。</div>";
+    html += "</div>";
+
+    html += "<button onclick='selectLevel()'>レベル選択へ</button>";
+    html += "<button class='btnSecondary' onclick='startLevel(\""+currentLevel+"\")'>同じレベルをもう一度</button>";
+    html += "<button class='btnGhost' onclick='showMenu()'>メニューへ</button>";
 
     document.getElementById("gameArea").innerHTML = html;
   }
@@ -511,14 +631,14 @@
   // =====================
   function showAdminLogin(){
     let html="<h2>管理者ログイン</h2>";
-    html+="<input type='password' id='adminPass' placeholder='パスワード' style='padding:12px;width:90%;font-size:18px;'><br><br>";
+    html+="<input type='password' id='adminPass' placeholder='パスワード'><br><br>";
     html+="<button onclick='checkAdmin()'>ログイン</button>";
-    html+="<button onclick='showMenu()'>戻る</button>";
+    html+="<button class='btnSecondary' onclick='showMenu()'>戻る</button>";
     document.getElementById("gameArea").innerHTML=html;
   }
 
   function checkAdmin(){
-    if(document.getElementById("adminPass").value==="admin123"){
+    if(document.getElementById("adminPass").value==="tkhr7272"){
       showAdmin();
     }else{
       alert("パスワード違います");
@@ -528,14 +648,23 @@
   function showAdmin(){
     let html="<h2>成績一覧</h2>";
     if(!logs.length){
-      html += "<p>まだ記録がありません</p>";
+      html += "<p class='center'>まだ記録がありません</p>";
     }else{
       logs.slice().reverse().forEach(log=>{
-        html += "<p>"+log.date+" | "+log.name+" | "+log.level+" | "+log.rate+"% | "+log.rank+"</p>";
+        html += "<p>"+escapeHtml(log.date)+" | "+escapeHtml(log.name)+" | "+escapeHtml(log.level)+" | "+log.rate+"% | "+escapeHtml(log.rank)+"</p>";
       });
     }
     html+="<button onclick='showMenu()'>戻る</button>";
     document.getElementById("gameArea").innerHTML=html;
+  }
+
+  function escapeHtml(str){
+    return String(str)
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
   }
 
   // =====================
