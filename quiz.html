@@ -5,7 +5,33 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>キャディー研修用クイズ</title>
+  
+<title>ゴルフ・キャディークイズ</title>
+
+<!-- PWA -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ゴルフ・キャディークイズ">
+
+<link rel="apple-touch-icon" href="icon.png">
+
+<!-- manifest -->
+<link rel="manifest" href="manifest.json">
+
+<!-- セキュリティ -->
+<meta http-equiv="Content-Security-Policy"
+content="
+default-src 'self' https:;
+img-src 'self' https: data:;
+script-src 'self' 'unsafe-inline';
+style-src 'self' 'unsafe-inline';
+connect-src https:;
+">
+
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="X-Frame-Options" content="DENY">
+<meta http-equiv="Referrer-Policy" content="no-referrer">
+
 
   <style>
     body{
@@ -27,6 +53,46 @@
       text-align:left;
     }
     h1,h2{ text-align:center; margin: 0 0 12px 0; }
+
+.smallNote{
+  font-size:12px;
+  opacity:0.8;
+  margin-top:6px;
+  text-align:center;
+}
+
+.smallNote{
+  font-size:12px;
+  opacity:0.8;
+  margin-top:6px;
+  text-align:center;
+}
+
+/* 起動スプラッシュ画面 */
+#splash{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:#0b3d0b;
+display:flex;
+align-items:center;
+justify-content:center;
+z-index:9999;
+}
+
+#splash img{
+width:90%;
+max-width:420px;
+border-radius:20px;
+}
+
+.hideSplash{
+opacity:0;
+transition:0.6s;
+pointer-events:none;
+}
 
 /* タイトルのサイズをスマホ最適化 */
 h1{
@@ -118,7 +184,13 @@ h1{
 </head>
 
 <body>
+
+<div id="splash">
+<img src="splash.jpg">
+</div>
+
   <div class="container">
+
     <div class="card" id="gameArea"></div>
     <p class="muted">不正解時：正解強調＋解説 → 次へ｜終了後：レベル選択へ戻る</p>
   </div>
@@ -946,7 +1018,20 @@ h1{
 }
 
   // =====================
-  showMenu();
-  </script>
+showMenu();
+
+window.addEventListener("load",()=>{
+
+setTimeout(()=>{
+const splash=document.getElementById("splash");
+if(splash){
+splash.classList.add("hideSplash");
+setTimeout(()=>{splash.remove()},600);
+}
+},1200);
+
+});
+
+</script>
 </body>
 </html>
