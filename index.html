@@ -13,9 +13,6 @@
 
 <link rel="apple-touch-icon" href="https://i.imgur.com/tHPG67p_d.webp">
 
-<!-- manifest -->
-<link rel="manifest" href="manifest.json">
-
 <!-- セキュリティ -->
 <meta http-equiv="Content-Security-Policy"
 content="
@@ -275,18 +272,71 @@ pointer-events:none;
     <p class="muted">不正解時：正解強調＋解説 → 次へ｜終了後：レベル選択へ戻る</p>
   </div>
 
-  <script>
-  "use strict";
+<script>
+"use strict";
 
-  // =====================
-  // ★ Google保存URLを入れる（必要なら）
-  // =====================
-  const GOOGLE_SCRIPT_URL = "ここにGASのURLを貼る";
+// =====================
+// ★ Google保存URL
+// =====================
+const GOOGLE_SCRIPT_URL = "ここにGASのURLを貼る";
+
+// =====================
+// localStorage
+// =====================
+const LS_NAME = "caddieQuiz_name";
+
+// =====================
+// showMenu（★これ復活させる）
+// =====================
+function showMenu(){
+  const savedName = (localStorage.getItem(LS_NAME) || "").trim();
+
+  let html = "<h1>⛳ キャディー研修用クイズ</h1>";
+  html += "<div class='center'>";
+  if(savedName){
+    html += "<span class='pill'>ようこそ： " + escapeHtml(savedName) + " さん</span>";
+    html += "<button onclick='selectLevelFromMenu()'>▶ レベル選択へ</button>";
+    html += "<button class='btnGhost' onclick='nameInput()'>✏️ 名前を変更して開始</button>";
+  }else{
+    html += "<button onclick='nameInput()'>▶ ゲーム開始</button>";
+  }
+  html += "<button class='btnSecondary' onclick='showAdminLogin()'>🔒 管理者</button>";
+  html += "</div>";
+  document.getElementById("gameArea").innerHTML = html;
+}
 
   // =====================
   // localStorage keys
-  // =====================
-  const LS_NAME = "caddieQuiz_name";
+
+// =====================
+// ★ レベル開放設定
+// true = 回答可能
+// false = 回答不可
+// =====================
+const DEFAULT_LEVEL_ACCESS = {
+  beginner: true,
+  intermediate: false,
+  advanced: false,
+  master: false,
+  shionre: true
+};
+
+function getLevelAccess(){
+  const saved = localStorage.getItem("caddieLevelAccess");
+  if(saved){
+    try{
+      return JSON.parse(saved);
+    }catch(e){}
+  }
+  return {...DEFAULT_LEVEL_ACCESS};
+}
+
+function saveLevelAccess(data){
+  localStorage.setItem("caddieLevelAccess", JSON.stringify(data));
+}
+
+let levelAccess = getLevelAccess();
+
 
   // =====================
   // 変数
@@ -295,6 +345,9 @@ pointer-events:none;
   let currentQuestion = 0;
   let score = 0;
   let quizData = [];
+
+let currentShionreDifficulty = "basic";
+
   let playerName = "";
 
   // 選択肢（シャッフル後の正誤判定用）
@@ -600,196 +653,370 @@ pointer-events:none;
   // ※画像URLは差し替えやすいように各問題の holeImg に入れてあります
   // =====================
 
-  const shionre_shirakaba = [
-    {question:"【しらかば1番】ティーショットで最も注意喚起すべきエリアはどこ？",
-     choices:["右サイド","左サイド（OB方向）","グリーン奥","ティー前方バンカー"],
-     answer:1,
-     explanation:"打ち下ろしで距離が出やすく、左に流れるとOBになりやすい。打ち下ろし＝安全ではない点を事前に共有。",
+  // =====================
+  // ===== 塩嶺CC専用モード（ブラッシュアップ版） =====
+  // 初級27問 ＋ 上級27問
+  // =====================
+
+  const shionre_basic_shirakaba = [
+    {question:"【しらかば1番｜初級】初めて来たお客様に『ここはどこ狙いが安全？』と聞かれたら、まずどう案内する？",
+     choices:["フェアウェイ右サイド。左OBがあるので右目が安全","左サイド。右はすべてOBなので左一択","真ん中より左。グリーンが近いので攻める","どこでも同じなので飛ぶクラブでOK"],
+     answer:0,
+     explanation:"しらかば1番は豪快な打ち下ろし。左にOBゾーンがあり、まずはフェアウェイ右サイドを基準に案内すると安全。",
      holeImg:"https://www.enrei.co.jp/wp-content/uploads/2016/12/shira-map01.jpg"
     },
-    {question:"【しらかば2番】このホールでプレー前に必ず確認しておくべきことは？",
-     choices:["ピン位置","グリーン傾斜","前組の位置（安全確認）","使用クラブ"],
-     answer:2,
-     explanation:"ブラインド要素があり打ち込み事故が起こりやすい。安全確認は距離案内より優先。",
+    {question:"【しらかば2番｜初級】『このホール、右に行きやすい？』と聞かれた時、キャディーが最初に伝えるべき内容は？",
+     choices:["ティーグラウンドがやや右を向いていて右へ出やすい","右は広いので気にしなくていい","左しか危険がないので右狙いでいい","グリーンだけ難しいのでティーショットは関係ない"],
+     answer:0,
+     explanation:"しらかば2番はティーグラウンドの向きの影響で右へ出やすい。まずアドレスと目標の確認を促すのが基本。",
      holeImg:"https://www.enrei.co.jp/wp-content/uploads/2016/12/shira-map02-1.jpg"
     },
-    {question:"【しらかば3番（ロング）】セカンドで特に警戒すべきのは？",
-     choices:["右OB","左クロスバンカー","グリーン手前の池","正面の林"],
-     answer:1,
-     explanation:"距離を出そうとすると左のクロスバンカーに捕まりやすい。欲張らず“次を打ちやすい場所”へ。",
+    {question:"【しらかば3番｜初級】『2打目はどっちに外しやすい？』と聞かれたら、最も注意を促すべき場所は？",
+     choices:["左のクロスバンカー","右ラフはすべてOB","グリーン奥の池","手前のクリーク"],
+     answer:0,
+     explanation:"しらかば3番はロングで、セカンドも左バンカーを警戒しながら右サイド基準で攻めるのが基本。",
      holeImg:"https://www.enrei.co.jp/wp-content/uploads/2016/12/shira-map03-1.jpg"
     },
-    {question:"【しらかば4番】池越えの砲台グリーン。最も安全な基本戦略は？",
-     choices:["ピンを正確に狙う","グリーン左サイド狙い","グリーンセンター狙い","池手前に刻む"],
-     answer:2,
-     explanation:"ピン狙い過多は池・バンカーのリスクが増える。“まず乗せる”を優先しセンター狙いが基本。",
+    {question:"【しらかば4番｜初級】『ピンが端でも真っすぐ狙っていい？』と聞かれたら、基本の返答は？",
+     choices:["砲台で池越えなのでグリーンセンター狙いが無難","必ずピンを直接狙う","右の土手に外すのが安全","池手前に刻むのが正解"],
+     answer:0,
+     explanation:"しらかば4番は池越えの砲台ショート。縦長で馬の背のため、まずはセンター狙いが基本。",
      holeImg:"https://www.enrei.co.jp/wp-content/uploads/2016/12/shira-map04-1.jpg"
     },
-    {question:"【しらかば5番】セカンドが極端に難しくなるミスは？",
-     choices:["右サイド","左への引っかけ","フェアウェイ中央","手前刻み"],
-     answer:1,
-     explanation:"左に外すとグリーンへのラインが消えやすい。ティーショット時点で“左NG”を明確に。",
+    {question:"【しらかば5番｜初級】『ティーショットは右と左どっちがいい？』と聞かれたら、どう答える？",
+     choices:["右サイド基準。左に引っかけると2打目が狙いにくい","左サイド基準。右はすべて危険","ど真ん中一択でOK","右ラフ狙いが最短ルート"],
+     answer:0,
+     explanation:"しらかば5番は右サイド基準が安全。左へ引っかけるとセカンドでグリーンを狙いづらくなる。",
      holeImg:"https://www.enrei.co.jp/wp-content/uploads/2016/12/shira-map05-1.jpg"
     },
-    {question:"【しらかば6番】ティーショットで最も避けたい球筋は？",
-     choices:["軽いドロー","フェード","スライス・押し出し","低弾道"],
-     answer:2,
-     explanation:"右サイドにバンカーと林がありスライスは即トラブル。狙いは左サイドが無難。",
+    {question:"【しらかば6番｜初級】『このホールで一番やってはいけない球は？』と聞かれたら？",
+     choices:["右へのスライス・押し出し","軽いドロー","低い球","左への引っかけ"],
+     answer:0,
+     explanation:"しらかば6番は右にバンカーと斜めの松があり、スライス・押し出しが大きなトラブルになりやすい。",
      holeImg:"https://www.enrei.co.jp/wp-content/uploads/2016/12/shira-map06-1.jpg"
     },
-    {question:"【しらかば7番（ショート）】このホールで最も重視すべき要素は？",
-     choices:["方向性","高さ","距離感（タッチ）","スピン量"],
-     answer:2,
-     explanation:"横長で奥行きが浅い。ショートもオーバーも大きなミスになるため距離感最優先。",
+    {question:"【しらかば7番｜初級】『このショートは方向と距離、どっちが大事？』と聞かれたら？",
+     choices:["距離感。横長で奥行きが浅く、オーバーもショートも危険","方向性だけ","高さだけ","スピン量だけ"],
+     answer:0,
+     explanation:"しらかば7番は池越えで横長グリーン。左右のバンカーもあり、まずは距離感重視で案内したい。",
      holeImg:"https://www.enrei.co.jp/wp-content/uploads/2016/12/shira-map07-1.jpg"
     },
-    {question:"【しらかば8番（ロング）】ティーショットで特に注意すべきポイントは？",
-     choices:["左OB","右前方クロスバンカー","グリーン奥","手前の池"],
-     answer:1,
-     explanation:"バンカー越えは距離が必要。無理をすると大叩きに繋がるので安全なレイアップ判断も重要。",
+    {question:"【しらかば8番｜初級】『1打目はどこを目印にすればいい？』と聞かれたら、最も基本的な案内は？",
+     choices:["右前方クロスバンカーの左サイド","左OBすれすれ","フェアウェイ左ラフ","グリーン方向へ真っすぐ"],
+     answer:0,
+     explanation:"しらかば8番は谷越えのパー5。右前方クロスバンカー左サイドが基本の目標物。",
      holeImg:"https://www.enrei.co.jp/wp-content/uploads/2016/12/shira-map08-1.jpg"
     },
-    {question:"【しらかば9番】セカンドの距離は基本どう見積もる？",
-     choices:["表示距離そのまま","1番手下げる","残り距離の約1割増し","風だけ見る"],
-     answer:2,
-     explanation:"強い打ち上げで見た目以上に距離がかかる。番手ミスを防ぐため補正を必ず共有。",
+    {question:"【しらかば9番｜初級】『2打目の距離は表示どおりでいい？』と聞かれたら？",
+     choices:["打ち上げなので残り距離の約1割増しを基準に伝える","表示どおりでOK","1番手下げる","風だけ見ればいい"],
+     answer:0,
+     explanation:"しらかば9番は強い打ち上げ。見た目以上に距離が必要で、1割増しの補正が基本。",
      holeImg:"https://www.enrei.co.jp/wp-content/uploads/2016/12/shira-map09-1.jpg"
     },
   ];
 
-  const shionre_rindo = [
-    {question:"【りんどう1番】ティーショットの狙い目（目標物）は？",
-     choices:["200〜220yd先の松の右","左OBギリギリ","右バンカー上","フェアウェイ中央の木"],
+  const shionre_basic_rindo = [
+    {question:"【りんどう1番｜初級】『ティーショットの目標はどこ？』と聞かれたら、最初に伝えるべきなのは？",
+     choices:["200〜220ヤード先の松の右","左OB際","グリーン方向へ真っすぐ","右バンカーの左"],
      answer:0,
-     explanation:"200〜220yd先の松の右が狙い目。松越え先はブラインドになりやすいので前組確認も必須。",
+     explanation:"りんどう1番は200〜220ヤード前方の松の右が狙い目。越えた先がブラインドになるため安全確認も重要。",
      holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/rin-map01-1.jpg"
     },
-    {question:"【りんどう2番】ティーショットの基本の安全サイドは？",
-     choices:["右サイド","左サイド","左ラフ","右ラフ"],
-     answer:1,
-     explanation:"打ち上げで距離もある。左サイド狙いが基本。グリーン左右手前の深いバンカーに注意。",
+    {question:"【りんどう2番｜初級】『このホールの2打目で一番気をつける場所は？』と聞かれたら？",
+     choices:["グリーン左右手前の深いバンカー","左の池","右の崖","グリーン奥は安全"],
+     answer:0,
+     explanation:"りんどう2番は距離のある打ち上げミドル。グリーン左右手前の深いバンカーへの注意喚起が重要。",
      holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/rin-map02-1.jpg"
     },
-    {question:"【りんどう3番】ティーショットの狙い目は？",
-     choices:["中央の檜の左","中央の檜の右","右端の白樺","左バンカー"],
-     answer:1,
-     explanation:"中央の檜の右サイドが狙い目。左OBは浅いので注意し、右サイドから攻めるのがベター。",
+    {question:"【りんどう3番｜初級】『ティーショットはどっちから攻めるのがいい？』と聞かれたら？",
+     choices:["右サイド基準。左OBが意外と浅い","左サイド基準。右は全部OB","真ん中固定でよい","右ラフ狙いが安全"],
+     answer:0,
+     explanation:"りんどう3番は中央の檜の右サイド基準。左OBが浅く、全体的に右から攻めるのがベター。",
      holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/rin-map03.jpg"
     },
-    {question:"【りんどう4番（難パー3）】特に厳禁とされるミスは？",
-     choices:["フック","押し出し・スライス","トップ","ダフリ"],
-     answer:1,
-     explanation:"距離があり難しい。グリーンは右に傾斜しやすく、押し出しは大きなトラブルに繋がる。",
+    {question:"【りんどう4番｜初級】『このショートで絶対避けたいミスは？』と聞かれたら？",
+     choices:["押し出し・スライス","軽いフック","低い球","ショート気味"],
+     answer:0,
+     explanation:"りんどう4番は距離のある難しいパー3。右へ逃げる球は特に危険なので強く注意したい。",
      holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/rin-map04.jpg"
     },
-    {question:"【りんどう5番】正面の突き抜けが起きやすい距離の目安は？",
-     choices:["150yd","200yd","250yd","300yd"],
-     answer:2,
-     explanation:"左ドッグの豪快な打ち下ろし。正面は約250ydで突き抜けるため番手・狙い目の共有が重要。",
+    {question:"【りんどう5番｜初級】『この打ち下ろし、ドライバーで振って大丈夫？』と聞かれたら、まず何を伝える？",
+     choices:["正面は約250ヤードで突き抜けるので距離管理が必要","全面的にフルショット推奨","左だけ見ればよい","バンカーだけ注意すればよい"],
+     answer:0,
+     explanation:"りんどう5番は豪快な打ち下ろし。正面250ヤードで突き抜けるため、方向だけでなく距離管理が重要。",
      holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/rin-map05.jpg"
     },
-    {question:"【りんどう6番（ショート）】狙い目として基本なのは？",
-     choices:["グリーンセンター","右奥ピン","左手前","とにかく奥"],
+    {question:"【りんどう6番｜初級】『この短いショート、どこ狙いが基本？』と聞かれたら？",
+     choices:["グリーンセンター","右奥","左端","ピンに真っすぐ"],
      answer:0,
-     explanation:"距離は短めだが外すと寄せが難しくなる。基本はセンター狙い。読み過ぎ注意。",
+     explanation:"りんどう6番は短いパー3。グリーンの起伏が比較的穏やかなのでセンター狙いが基本。",
      holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/rin-map06.jpg"
     },
-    {question:"【りんどう7番】ティーショットの狙い目は？",
-     choices:["右OB際","左サイド（小屋方向）","右バンカー","ど真ん中"],
-     answer:1,
-     explanation:"右にOB。狙い目は左サイド（小屋方向）。右傾斜でランが右へ流れやすい点も注意。",
+    {question:"【りんどう7番｜初級】『ティーショットはどこ目標？』と聞かれたら、最も基本的な答えは？",
+     choices:["左サイドの小屋方向。右OBがある","右サイド。左はすべて危険","真ん中固定","左ラフ狙い"],
+     answer:0,
+     explanation:"りんどう7番は右にOBがあり、左サイドの小屋方向が基本目標。ランで右へ流れやすい点も伝えたい。",
      holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/rin-map07.jpg"
     },
-    {question:"【りんどう8番（ロング）】グリーン手前で注意すべき代表的ハザードは？",
-     choices:["左のOB","池","左右のバンカー","注意不要"],
+    {question:"【りんどう8番｜初級】『ロングだけど1打目はどこが安全？』と聞かれたら？",
+     choices:["右サイド基準","左OB際","左ラフ狙い","グリーン方向へ一直線"],
      answer:0,
-     explanation:"打ち上げでグリーン周りが難しい。左OBが浅いので注意。",
+     explanation:"りんどう8番は打ち上げのパー5。1打目は右サイド基準で、グリーン手前左右のバンカーに注意。",
      holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/rin-map08.jpg"
     },
-    {question:"【りんどう9番】ティーショットの狙い目は？",
-     choices:["左バンカーの右サイド","右OBギリギリ","フェアウェイ右サイド","手前に刻む"],
+    {question:"【りんどう9番｜初級】『このホールはどこから攻めるのが無難？』と聞かれたら？",
+     choices:["左バンカー右サイド狙いで、グリーンは左手前から","右OB際を強気に","左ラフならベスト","真ん中に打てばすべて解決"],
      answer:0,
-     explanation:"谷越えで距離のあるパー4。狙い目は左バンカー右サイド。グリーンは右傾斜のため左手前が安全。",
+     explanation:"りんどう9番は谷越えの距離のあるパー4。左バンカー右サイドが基本で、グリーンは左手前からが安全。",
      holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/rin-map09.jpg"
     },
   ];
 
-  const shionre_suzuran = [
-    {question:"【すずらん1番】ティーショットの狙い目（目標物）は？",
-     choices:["中央の松","左バンカー","右OB際","池手前"],
+  const shionre_basic_suzuran = [
+    {question:"【すずらん1番｜初級】『1打目の目標はどこ？』と聞かれたら、まずどう案内する？",
+     choices:["中央の松","左バンカー","右OB際","池の手前"],
      answer:0,
-     explanation:"右ドッグレッグ。狙い目は中央の松。グリーンは奥傾斜で手前からがベター。",
+     explanation:"すずらん1番は右ドッグレッグ。中央の松が目標で、グリーンは奥傾斜なので手前から攻めるのが基本。",
      holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/suzu-map01.jpg"
     },
-    {question:"【すずらん2番（砲台パー3）】特に注意すべき点は？",
-     choices:["右奥","左手前（深い）","グリーン奥","グリーンの傾斜"],
-     answer:1,
-     explanation:"グリーンの傾斜が強く、奥から早い。",
+    {question:"【すずらん2番｜初級】『このショートで一番気をつける場所は？』と聞かれたら？",
+     choices:["左手前の深いバンカー","右の池","グリーン奥は安全","手前は広いので心配不要"],
+     answer:0,
+     explanation:"すずらん2番は砲台グリーン。左手前バンカーが深く、グリーンは奥から手前へ強く速い。",
      holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/suzu-map02.jpg"
     },
-    {question:"【すずらん3番】セカンドで番手選びに注意が必要な理由は？",
-     choices:["右が谷で左右ともOBが近い","池が正面にある","グリーンが受けて止まり過ぎる","バンカーが無い"],
+    {question:"【すずらん3番｜初級】『飛ぶ人なら2オン狙える？』と聞かれたら、キャディーが先に伝えるべきことは？",
+     choices:["落下地点右が谷で、左右ともOBが近いので番手選びが重要","必ず2オンを勧める","右は広いので問題ない","左は絶対安全"],
      answer:0,
-     explanation:"2オンも狙えるが、右が谷で左右OBが近い。無理をしない“確率”の案内が重要。",
+     explanation:"すずらん3番は2オンの魅力があるが、右が谷で左右OBが近い。無理をさせない説明が大事。",
      holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/suzu-map03.jpg"
     },
-    {question:"【すずらん4番】飛距離が出る人のチャレンジとして案内されるルートは？",
-     choices:["池越えにチャレンジ","バンカー越え","ワンオン狙い","OB越え"],
+    {question:"【すずらん4番｜初級】『池越えで攻めるか迷う』と聞かれたら、基本の案内は？",
+     choices:["無理せず左前方の池右側を目標にするのが基本","必ず池越えを勧める","右ラフ方向へ逃がす","真っすぐ打てば何も問題ない"],
      answer:0,
-     explanation:"難易度の高いパー4。飛距離に自信がある場合のみ池越えも選択肢。無理強いは禁物。",
+     explanation:"すずらん4番は難易度の高いパー4。飛距離がある人以外は、左前方池の右側基準が無難。",
      holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/suzu-map04.jpg"
     },
-    {question:"【すずらん5番】セカンドで特に警戒すべきのは？",
-     choices:["グリーン手前左右の深いバンカー","池","注意不要","クリーク"],
+    {question:"【すずらん5番｜初級】『この短いミドル、何に気をつければいい？』と聞かれたら？",
+     choices:["右に出やすいことと、グリーン手前左右の深いバンカー","左OBだけ","グリーンは平らなので問題ない","とにかく奥まで打つこと"],
      answer:0,
-     explanation:"打ち上げ短いパー4で砲台。グリーン手前左右のバンカーは深く、乗せる距離感が肝。",
+     explanation:"すずらん5番は右へ出やすく、砲台グリーン手前左右の深いバンカーも要注意。",
      holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/suzu-map05.jpg"
     },
-    {question:"【すずらん6番（ショート）】狙い目として基本なのは？",
-     choices:["グリーンセンター","右奥","左手前","とにかく奥"],
+    {question:"【すずらん6番｜初級】『番手は普通の170ヤードの感覚でいい？』と聞かれたら？",
+     choices:["打ち下ろしを十分考慮して番手を選ぶ","表示どおりでよい","1番手大きくする","風だけ見ればいい"],
      answer:0,
-     explanation:"打ち下ろし分を考慮して番手選び。オーバーすると寄せが難しくなるのでセンター狙いが基本。",
+     explanation:"すずらん6番は打ち下ろしのパー3。オーバーするとトラブルになりやすく、打ち下ろし補正が必要。",
      holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/suzu-map06.jpg"
     },
-    {question:"【すずらん7番】正面が突き抜ける距離の目安は？",
-     choices:["280yd","200yd","230yd","250yd"],
-     answer:2,
-     explanation:"右ドッグ。正面は約230ydで突き抜ける。方向性だけでなく距離管理も必須。",
+    {question:"【すずらん7番｜初級】『このホールはどこ狙い？』と聞かれたら？",
+     choices:["フェアウェイ右サイド。正面は約250ヤードで突き抜ける","左サイド。右は全部危険","ど真ん中へ全力","グリーン方向へ真っすぐ"],
+     answer:0,
+     explanation:"すずらん7番は右ドッグレッグ。右サイド基準だが、正面250ヤード突き抜けに注意が必要。",
      holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/suzu-map07.jpg"
     },
-    {question:"【すずらん8番】セカンドで注意すべきこととして挙げられるのは？",
-     choices:["左OBが浅い＆オーバー注意","右に池がある","攻め放題","グリーンは平らで簡単"],
+    {question:"【すずらん8番｜初級】『1打目は右と左、どっちが安全？』と聞かれたら？",
+     choices:["左サイド。1打目が右に出やすいので注意","右サイド固定","真ん中だけ見ればよい","左はすべてOBなので右"],
      answer:0,
-     explanation:"左OBが浅いホール。さらにオーバーもトラブルになりやすいので番手選び・狙い所の共有が重要。",
+     explanation:"すずらん8番は第1打が右へ出やすい。左サイド基準で組み立てるのが基本。",
      holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/suzu-map08.jpg"
     },
-    {question:"【すずらん9番】このホールの基本の攻めサイドは？",
-     choices:["左サイド","右サイド","ど真ん中","どこでも"],
-     answer:1,
-     explanation:"右サイドから攻めるのがベター。下りで2オンもあるため打ち込み（前組）の安全確認も徹底。",
+    {question:"【すずらん9番｜初級】『このロングはどこから攻めるのが基本？』と聞かれたら？",
+     choices:["右サイド基準。飛ぶ人は2オンもあるので前組確認も必要","左サイド一択","ど真ん中なら問題ない","1打目は短く刻むのが絶対"],
+     answer:0,
+     explanation:"すずらん9番は右サイドから攻めるのがベター。下りで2オンもあり、打ち込み確認が重要。",
      holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/suzu-map09.jpg"
     },
   ];
 
-  // 27問まとめ
-  const shionre_all = [].concat(shionre_shirakaba, shionre_rindo, shionre_suzuran);
+  const shionre_advanced_shirakaba = [
+    {question:"【しらかば1番｜上級】『ワンオン狙えるけど、どこだけは外したくない？』と聞かれた時の最適回答は？",
+     choices:["左OB。右サイド基準で2打目勝負が基本","右ラフ。左は安全","グリーン奥だけ注意","手前は全部危険"],
+     answer:0,
+     explanation:"しらかば1番は打ち下ろしで飛ぶが、左OBが明確な失敗ゾーン。上級案内では“攻めるなら外しどころ”まで伝える。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2016/12/shira-map01.jpg"
+    },
+    {question:"【しらかば2番｜上級】『右に出やすいなら、目標はどこに取るのがいい？』と聞かれたら？",
+     choices:["フェアウェイ左側のしらかば方向を基準にする","真ん中の1本木","右ラフ方向","ピン方向へ真っすぐ"],
+     answer:0,
+     explanation:"しらかば2番はティーグラウンドの向きで右へ出やすいため、左側のしらかばを基準に修正するのが有効。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2016/12/shira-map02-1.jpg"
+    },
+    {question:"【しらかば3番｜上級】『ロングだけど、2打目は攻めるべき？』と聞かれたら、最も実戦的な案内は？",
+     choices:["左バンカーを消しながら右サイドへ運ぶ意識が安全","常に2オン狙い一択","左からショートカットが正解","グリーン左に外しても問題ない"],
+     answer:0,
+     explanation:"しらかば3番は長いロング。1打目も2打目も右サイド基準で左バンカーを消すのが実戦的。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2016/12/shira-map03-1.jpg"
+    },
+    {question:"【しらかば4番｜上級】『ピンが右でも右を攻めるべき？』と聞かれたら？",
+     choices:["ピン位置に関係なくセンター基準。外すなら右からのアプローチがまだ寄せやすい","必ずピン真っすぐ","右奥外しが最も安全","池手前に刻む"],
+     answer:0,
+     explanation:"しらかば4番は砲台で馬の背。上級者にも“ピン位置よりセンター”を優先して伝える価値がある。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2016/12/shira-map04-1.jpg"
+    },
+    {question:"【しらかば5番｜上級】『2打目で特に避けたいバンカー配置は？』と聞かれたら？",
+     choices:["グリーン左手前・左奥・右の3か所","手前中央だけ","右奥だけ","バンカーは無い"],
+     answer:0,
+     explanation:"しらかば5番はグリーン周りのバンカー配置を把握していると案内の質が上がる。左へ引っかけた後はさらに難度が増す。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2016/12/shira-map05-1.jpg"
+    },
+    {question:"【しらかば6番｜上級】『右に逃げたくないなら、ティーショットはどこ基準？』と聞かれたら？",
+     choices:["左サイド基準。右バンカーと斜めの松を消したい","右バンカー方向","フェアウェイ中央の木","ど真ん中固定"],
+     answer:0,
+     explanation:"しらかば6番は右のミスが致命傷になりやすい。左サイドに基準を置くことで押し出しを抑えやすい。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2016/12/shira-map06-1.jpg"
+    },
+    {question:"【しらかば7番｜上級】『ピンが左右どちらか端でもセンター狙いがいい理由は？』と聞かれたら？",
+     choices:["横長で奥行きが浅く、左右ガードバンカーもあるので大きなミスを減らせる","センターが一番近いから","左右は全部OBだから","池はほとんど関係ないから"],
+     answer:0,
+     explanation:"しらかば7番は単なる距離の問題ではなく、横長・浅い奥行き・左右バンカーの複合リスクを説明できるとよい。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2016/12/shira-map07-1.jpg"
+    },
+    {question:"【しらかば8番｜上級】『飛ぶ人がバンカー越えを狙うなら、何ヤードが目安？』と聞かれたら？",
+     choices:["約190〜220ヤード","約150〜170ヤード","約230〜250ヤード","約260ヤード以上"],
+     answer:0,
+     explanation:"しらかば8番は右前方クロスバンカー越えの目安が190〜220ヤード。飛ぶ人向けの具体案内として有効。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2016/12/shira-map08-1.jpg"
+    },
+    {question:"【しらかば9番｜上級】『グリーン周りで一番やってはいけないミスは？』と聞かれたら？",
+     choices:["オーバー。奥から手前の傾斜が強い","ショート。手前は全部OB","右だけ絶対NG","左はどこでも安全"],
+     answer:0,
+     explanation:"しらかば9番は打ち上げ補正に気を取られてオーバーも出やすい。奥からの強い傾斜まで含めて伝えたい。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2016/12/shira-map09-1.jpg"
+    },
+  ];
 
-  // =====================
-  function showMenu(){
-    const savedName = (localStorage.getItem(LS_NAME) || "").trim();
-    let html = "<h1>⛳ キャディー研修用クイズ</h1>";
-    html += "<div class='center'>";
-    if(savedName){
-      html += "<span class='pill'>ようこそ： " + escapeHtml(savedName) + " さん</span>";
-      html += "<button onclick='selectLevelFromMenu()'>▶ レベル選択へ</button>";
-      html += "<button class='btnGhost' onclick='nameInput()'>✏️ 名前を変更して開始</button>";
-    }else{
-      html += "<button onclick='nameInput()'>▶ ゲーム開始</button>";
-    }
-    html += "<button class='btnSecondary' onclick='showAdminLogin()'>🔒 管理者</button>";
-    html += "</div>";
-    document.getElementById("gameArea").innerHTML = html;
-  }
+  const shionre_advanced_rindo = [
+    {question:"【りんどう1番｜上級】『前が見えないけど、いつ打っていい？』と聞かれたら？",
+     choices:["松を越えた先がブラインドなので、グリーン近くの全員が見えてから","音がしなければ打ってよい","前組がカートに乗ったら打つ","見えなくても通常どおり打つ"],
+     answer:0,
+     explanation:"りんどう1番の重要ポイントはブラインドと安全確認。上級問題では“いつ打つか”まで答えられるかを問う。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/rin-map01-1.jpg"
+    },
+    {question:"【りんどう1番｜上級】『残り120ヤード付近から何が難しくなる？』と聞かれたら？",
+     choices:["左足下がりの傾斜になる","急な上りで1番手足りない","右足下がりになる","池越えになる"],
+     answer:0,
+     explanation:"りんどう1番は残り120ヤード付近から左足下がり傾斜。番手選びと球筋のイメージに影響する。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/rin-map01-1.jpg"
+    },
+    {question:"【りんどう2番｜上級】『2打目が思ったより長く感じるのはなぜ？』と聞かれたら？",
+     choices:["見た目以上に距離があり、打ち上げ補正も必要だから","風が常にフォローだから","グリーンが受けているから","フェアウェイが全部下りだから"],
+     answer:0,
+     explanation:"りんどう2番は打ち上げで距離のあるミドル。見た目以上に番手が必要になりやすい。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/rin-map02-1.jpg"
+    },
+    {question:"【りんどう3番｜上級】『1打目の目印は何？』と聞かれたら？",
+     choices:["真ん中に立っている檜の右サイド","左バンカーの左","グリーン奥","右ラフの先"],
+     answer:0,
+     explanation:"りんどう3番は中央の檜の右サイドが目標。左OBが浅いので、目標物を使って右基準をはっきりさせたい。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/rin-map03.jpg"
+    },
+    {question:"【りんどう4番｜上級】『このパー3のグリーン形状は？』と聞かれたら？",
+     choices:["左手前から右奥に長い形","完全な横長","円形で平ら","奥行きが極端に短い"],
+     answer:0,
+     explanation:"りんどう4番は距離もあり、右傾斜に加えてグリーン形状まで把握しているとより具体的な案内ができる。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/rin-map04.jpg"
+    },
+    {question:"【りんどう5番｜上級】『最短距離でピン方向を狙うと何が危ない？』と聞かれたら？",
+     choices:["左OBが待っている","右の池がある","手前は全部バンカー","グリーン奥は完全セーフ"],
+     answer:0,
+     explanation:"りんどう5番は左ドッグの打ち下ろし。ピン方向への最短狙いは左OBを招きやすい。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/rin-map05.jpg"
+    },
+    {question:"【りんどう6番｜上級】『このショートはグリーンを読みすぎない方がいいのはなぜ？』と聞かれたら？",
+     choices:["起伏が比較的穏やかだから","2段グリーンだから","常に逆目だから","芝目が極端だから"],
+     answer:0,
+     explanation:"りんどう6番は起伏が比較的穏やか。必要以上に曲がりを見すぎないよう案内するのがコツ。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/rin-map06.jpg"
+    },
+    {question:"【りんどう7番｜上級】『2打目の番手で迷う人に何を補足する？』と聞かれたら？",
+     choices:["残り150ヤードから打ち下ろしになり、下りでランも出やすい","常に打ち上げなので大きめ","風だけ見ればよい","グリーンは止まりやすいので強く打つ"],
+     answer:0,
+     explanation:"りんどう7番は残り150ヤードから下り。番手選びでは“下り＋ラン”まで伝えると親切。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/rin-map07.jpg"
+    },
+    {question:"【りんどう8番｜上級】『グリーン周りで特に見ておくべきバンカーは？』と聞かれたら？",
+     choices:["グリーン手前左右のバンカー","右奥1つだけ","左奥だけ","バンカーは気にしなくてよい"],
+     answer:0,
+     explanation:"りんどう8番は打ち上げロング。グリーン手前左右のバンカー位置を把握しておくとセカンド・サードの助言がしやすい。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/rin-map08.jpg"
+    },
+    {question:"【りんどう9番｜上級】『飛ぶ人なら右も使える？』と聞かれたら、どう答える？",
+     choices:["右サイドも広く使えるが、基本は左バンカー右サイド基準","右は全面OBなので不可","必ず左のみ","右は狭いので絶対NG"],
+     answer:0,
+     explanation:"りんどう9番は飛距離のある人なら右も使えるが、基本の狙いどころは左バンカー右サイド。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/rin-map09.jpg"
+    },
+  ];
+
+  const shionre_advanced_suzuran = [
+    {question:"【すずらん1番｜上級】『グリーンはどっちから攻めるのがいい？』と聞かれたら？",
+     choices:["奥に傾斜があるので手前から","奥から下りの方が簡単","右ラフからが一番寄る","どこからでも同じ"],
+     answer:0,
+     explanation:"すずらん1番は右ドッグ。ティーショットだけでなく、グリーンの奥傾斜まで含めて説明できるとよい。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/suzu-map01.jpg"
+    },
+    {question:"【すずらん2番｜上級】『このショートで上につけると速いのはなぜ？』と聞かれたら？",
+     choices:["奥から手前の傾斜がきつい砲台グリーンだから","芝目が全部順目だから","風が必ずフォローだから","右へ傾いているだけだから"],
+     answer:0,
+     explanation:"すずらん2番は砲台で、奥から手前の傾斜がきつく非常に速い。位置による難しさを伝えたい。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/suzu-map02.jpg"
+    },
+    {question:"【すずらん3番｜上級】『飛ぶ人が2オンを狙う時、どこが一番怖い？』と聞かれたら？",
+     choices:["落下地点右の谷と、左右とも近いOB","手前の池だけ","左手前のバンカーだけ","グリーン奥は完全セーフ"],
+     answer:0,
+     explanation:"すずらん3番は2オン可能だが、落下地点右の谷と左右OBがプレッシャー。リスク説明が重要。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/suzu-map03.jpg"
+    },
+    {question:"【すずらん4番｜上級】『飛ぶ人が池越えを狙うなら、どこを基準に話す？』と聞かれたら？",
+     choices:["左前方池の右側が基本目標。飛ぶ人だけ池越えも選択肢","池の真上","左OB際","グリーン方向に真っすぐ"],
+     answer:0,
+     explanation:"すずらん4番は池越えチャレンジもあるが、基本は左前方池の右側を目標に組み立てる。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/suzu-map04.jpg"
+    },
+    {question:"【すずらん5番｜上級】『グリーンを外すならどこに注意？』と聞かれたら？",
+     choices:["手前左右の深いバンカー","右奥の池","左奥のOB","奥は全部安全"],
+     answer:0,
+     explanation:"すずらん5番は短いが砲台グリーンで、手前左右バンカーが深い。短いからこそ落とし所の精度が大事。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/suzu-map05.jpg"
+    },
+    {question:"【すずらん6番｜上級】『このショートのグリーンの特徴は？』と聞かれたら？",
+     choices:["すずらんコースでは比較的穏やかなグリーン","強い2段グリーン","極端な受けグリーン","全面右傾斜"],
+     answer:0,
+     explanation:"すずらん6番は打ち下ろし補正が主テーマ。グリーン自体は比較的穏やかなので、その点も伝えられると良い。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/suzu-map06.jpg"
+    },
+    {question:"【すずらん7番｜上級】『このホールでキャディーが一番伝えたいのは方向？距離？』と聞かれたら？",
+     choices:["両方。右サイド狙いだが正面250ヤード突き抜けもある","方向だけ","距離だけ","どちらも不要"],
+     answer:0,
+     explanation:"すずらん7番は右ドッグで、目標方向だけでなく250ヤード突き抜けへの距離警戒も必要。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/suzu-map07.jpg"
+    },
+    {question:"【すずらん8番｜上級】『2打目はどこを一番警戒する？』と聞かれたら？",
+     choices:["左OBが浅いことと、グリーンオーバー","右の池","中央バンカーだけ","ショートだけ気にすればよい"],
+     answer:0,
+     explanation:"すずらん8番は1打目が右に出やすい上、2打目では左OBが浅くオーバーも危険。上級者にも難しい管理が必要。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/suzu-map08.jpg"
+    },
+    {question:"【すずらん9番｜上級】『2オンが見える人に何を一番注意する？』と聞かれたら？",
+     choices:["前組への打ち込みと、グリーンへ向かって狭くなる落下地点","左OBだけ","グリーン奥は安全なので強気でOK","手前が全部池"],
+     answer:0,
+     explanation:"すずらん9番は下りで飛距離が出やすく2オン圏内もある。安全確認と狭くなる落下地点の管理が重要。",
+     holeImg:"https://www.enrei.co.jp/wp-content/uploads/2017/01/suzu-map09.jpg"
+    },
+  ];
+
+  const shionre_basic_all = [].concat(
+    shionre_basic_shirakaba,
+    shionre_basic_rindo,
+    shionre_basic_suzuran
+  );
+
+const shionre_advanced_all = [].concat(
+  shionre_advanced_shirakaba,
+  shionre_advanced_rindo,
+  shionre_advanced_suzuran
+);
 
   function selectLevelFromMenu(){
     const savedName = (localStorage.getItem(LS_NAME) || "").trim();
@@ -850,44 +1077,64 @@ pointer-events:none;
   }
 
   // =====================
-  function startLevel(level){
-    currentLevel = level;
-    currentQuestion = 0;
-    score = 0;
 
-    if(level==="beginner") quizData = beginner;
-    if(level==="intermediate") quizData = intermediate;
-    if(level==="advanced") quizData = advanced;
-    if(level==="master") quizData = master;
-    if(level==="shionre") quizData = shionre_all;
+function startLevel(level){
+  currentLevel = level;
+  currentQuestion = 0;
+  score = 0;
 
-    loadQuestion();
-  }
+  if(level==="beginner") quizData = beginner;
+  if(level==="intermediate") quizData = intermediate;
+  if(level==="advanced") quizData = advanced;
+  if(level==="master") quizData = master;
+
+  loadQuestion();
+}
 
   // =====================
   // ===== 塩嶺CC専用モードのコース選択（追加） =====
   // =====================
+
   function showShionreMenu(){
     currentLevel = "shionre";
     let html = "<h2>🏞 塩嶺CC 専用モード</h2>";
     html += "<div class='center'><span class='pill'>" + escapeHtml(playerName) + " さん</span></div>";
-    html += "<button onclick='startShionreCourse(\"shirakaba\")'>🌲 しらかば（9問）</button>";
-    html += "<button onclick='startShionreCourse(\"rindo\")'>🌸 りんどう（9問）</button>";
-    html += "<button onclick='startShionreCourse(\"suzuran\")'>🌼 すずらん（9問）</button>";
-    html += "<button onclick='startShionreCourse(\"all\")'>🏁 3コースまとめて（27問）</button>";
+
+    html += "<h3 style='text-align:center;'>初級</h3>";
+    html += "<button onclick='startShionreCourse(\"shirakaba\",\"basic\")'>🌲 しらかば 初級（9問）</button>";
+    html += "<button onclick='startShionreCourse(\"rindo\",\"basic\")'>🌸 りんどう 初級（9問）</button>";
+    html += "<button onclick='startShionreCourse(\"suzuran\",\"basic\")'>🌼 すずらん 初級（9問）</button>";
+    html += "<button onclick='startShionreCourse(\"all\",\"basic\")'>🏁 3コース初級まとめて（27問）</button>";
+
+    html += "<h3 style='text-align:center;margin-top:18px;'>上級</h3>";
+    html += "<button onclick='startShionreCourse(\"shirakaba\",\"advanced\")'>🌲 しらかば 上級（9問）</button>";
+    html += "<button onclick='startShionreCourse(\"rindo\",\"advanced\")'>🌸 りんどう 上級（9問）</button>";
+    html += "<button onclick='startShionreCourse(\"suzuran\",\"advanced\")'>🌼 すずらん 上級（9問）</button>";
+    html += "<button onclick='startShionreCourse(\"all\",\"advanced\")'>🔥 3コース上級まとめて（27問）</button>";
+
     html += "<button class='btnSecondary' onclick='selectLevel()'>レベル選択へ戻る</button>";
     document.getElementById("gameArea").innerHTML = html;
   }
 
-  function startShionreCourse(which){
+   function startShionreCourse(which, difficulty="basic"){
     currentLevel = "shionre";
+    currentShionreDifficulty = difficulty;
     currentQuestion = 0;
     score = 0;
 
-    if(which==="shirakaba") quizData = shionre_shirakaba;
-    if(which==="rindo") quizData = shionre_rindo;
-    if(which==="suzuran") quizData = shionre_suzuran;
-    if(which==="all") quizData = shionre_all;
+    if(difficulty === "basic"){
+      if(which==="shirakaba") quizData = shionre_basic_shirakaba;
+      if(which==="rindo") quizData = shionre_basic_rindo;
+      if(which==="suzuran") quizData = shionre_basic_suzuran;
+      if(which==="all") quizData = shionre_basic_all;
+    }
+
+    if(difficulty === "advanced"){
+      if(which==="shirakaba") quizData = shionre_advanced_shirakaba;
+      if(which==="rindo") quizData = shionre_advanced_rindo;
+      if(which==="suzuran") quizData = shionre_advanced_suzuran;
+      if(which==="all") quizData = shionre_advanced_all;
+    }
 
     loadQuestion();
   }
@@ -1025,7 +1272,9 @@ pointer-events:none;
     // 塩嶺は塩嶺メニューへ戻す
     if(currentLevel==="shionre"){
       html += "<button onclick='showShionreMenu()'>塩嶺CCメニューへ</button>";
-      html += "<button class='btnSecondary' onclick='startLevel(\"shionre\")'>27問まとめをもう一度</button>";
+
+html += "<button class='btnSecondary' onclick='showShionreMenu()'>もう一度挑戦する</button>";
+
       html += "<button class='btnGhost' onclick='selectLevel()'>レベル選択へ</button>";
     }else{
       html += "<button onclick='selectLevel()'>レベル選択へ</button>";
