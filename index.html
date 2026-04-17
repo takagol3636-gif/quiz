@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+　　　　<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
@@ -47,21 +47,6 @@ connect-src https:;
       border-radius:12px;
       text-align:left;
     }
-    h1,h2{ text-align:center; margin: 0 0 12px 0; }
-
-.smallNote{
-  font-size:12px;
-  opacity:0.8;
-  margin-top:6px;
-  text-align:center;
-}
-
-.smallNote{
-  font-size:12px;
-  opacity:0.8;
-  margin-top:6px;
-  text-align:center;
-}
 
 /* 起動スプラッシュ画面 */
 #splash{
@@ -157,24 +142,31 @@ h1{
     .muted{ opacity:0.85; font-size:14px; text-align:center; }
 
     /* ===== 塩嶺CCモード用（追加） ===== */
-    .holeImgWrap{
-      margin:10px 0 12px;
-      text-align:center;
-    }
-    .holeImg{
-      max-width:100%;
-      height:auto;
-      border-radius:10px;
-      border:1px solid rgba(255,255,255,0.18);
-      display:block;
-      margin:0 auto;
-    }
-    .smallNote{
-      font-size:12px;
-      opacity:0.8;
-      margin-top:6px;
-      text-align:center;
-    }
+
+.holeImgWrap{
+  margin: 14px 0 16px;
+  text-align: center;
+  background: #fff;
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.holeImg{
+  max-width: 100%;
+  max-height: 160px;
+  height: auto;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+  border-radius: 10px;
+}
+
+.smallNote{
+  font-size: 12px;
+  opacity: 0.8;
+  margin-top: 6px;
+  text-align: center;
+}
 
 /* ===== App風アニメーション ===== */
 
@@ -396,48 +388,78 @@ let currentShionreDifficulty = "basic";
   // =====================
   // 問題データ（既存）
   // =====================
-  const beginner = [
-    {question:"キャディーの基本姿勢として最も重要なのは？",
-    choices:["スピード","笑顔と礼儀","距離感覚","声量"],
-    answer:1, explanation:"第一印象は笑顔と礼儀で決まる。"},
-
-    {question:"ティーグラウンドで最初に確認するのは？",
-    choices:["風向き","ピン位置","使用ティー","前組の位置"],
-    answer:3, explanation:"安全確認が最優先。"},
-
-    {question:"残り距離を伝える時に必要なのは？",
-    choices:["自信","勘","正確な計測","経験則のみ"],
-    answer:2, explanation:"正確な距離が基本。"},
-
-    {question:"バンカー均しで正しいのは？",
-    choices:["足跡だけ均す","全体をレーキで均す","放置","打った場所だけ均す"],
-    answer:1, explanation:"全体を丁寧に均す。"},
-
-    {question:"OBの正式名称は？",
-    choices:["Out Ball","Official Boundary","Out of Bounds","Outside Birdie"],
-    answer:2, explanation:"Out of Boundsの略。"},
-
-    {question:"グリーン上で走って良い？",
-    choices:["OK","状況次第","基本NG","急げば可"],
-    answer:2, explanation:"芝保護のため走らない。"},
-
-    {question:"お客様のクラブ確認はいつ？",
-    choices:["前日","常時","スタート前","終わってから"],
-    answer:2, explanation:"渡す前に必ず確認。"},
-
-    {question:"プレーファストの基本は？",
-    choices:["急がせる","準備の徹底","無言","走る"],
-    answer:1, explanation:"準備を整えることが重要。"},
-
-    {question:"ボールマーク修復は誰の仕事？",
-    choices:["キャディー","お客様","見つけた人","全員"],
-    answer:3, explanation:"見つけた人が直すのがマナー。"},
-
-    {question:"雨天時優先すべきは？",
-    choices:["速度","安全","売上","演出"],
-    answer:1, explanation:"安全最優先。"}
-  ];
-
+ const beginner = [
+  {
+    question:"このロゴのブランド名は？",
+    questionImg:"https://logo.clearbit.com/xxio.dunlop.co.jp",
+    choices:["XXIO","Srixon","Titleist","PING"],
+    answer:0,
+    explanation:"XXIO（ゼクシオ）は日本で非常に知名度の高いゴルフブランド。"
+  },
+  {
+    question:"このロゴのブランド名は？",
+    questionImg:"https://commons.wikimedia.org/wiki/Special:FilePath/PING%20logo.svg",
+    choices:["Callaway","PING","TaylorMade","HONMA"],
+    answer:1,
+    explanation:"大文字で PING と書かれたロゴはPING。"
+  },
+  {
+    question:"このロゴのブランド名は？",
+    questionImg:"https://commons.wikimedia.org/wiki/Special:FilePath/TaylorMade.svg",
+    choices:["TaylorMade","Mizuno","Bridgestone Golf","EPON"],
+    answer:0,
+    explanation:"三角形の入ったロゴはTaylorMade。"
+  },
+  {
+    question:"このロゴのブランド名は？",
+    questionImg:"https://commons.wikimedia.org/wiki/Special:FilePath/Callaway%20Golf%20Company%20logo.svg",
+    choices:["Srixon","Callaway","XXIO","PRGR"],
+    answer:1,
+    explanation:"山形マークと文字ロゴはCallaway。"
+  },
+  {
+    question:"このロゴのブランド名は？",
+    questionImg:"https://commons.wikimedia.org/wiki/Special:FilePath/Srixon%20logo.svg",
+    choices:["Titleist","Srixon","YAMAHA","HONMA"],
+    answer:1,
+    explanation:"斜体で書かれたロゴはSrixon。"
+  },
+  {
+    question:"このロゴのブランド名は？",
+    questionImg:"https://commons.wikimedia.org/wiki/Special:FilePath/Titleist%20logo.svg",
+    choices:["Mizuno","Titleist","TaylorMade","PING"],
+    answer:1,
+    explanation:"筆記体のロゴはTitleist。"
+  },
+  {
+    question:"このロゴのブランド名は？",
+    questionImg:"https://commons.wikimedia.org/wiki/Special:FilePath/Logo-bridgestone.png",
+    choices:["Bridgestone Golf","Callaway","XXIO","EPON"],
+    answer:0,
+    explanation:"『B』の入ったロゴはBridgestone系でよく見られる。"
+  },
+  {
+    question:"このロゴのブランド名は？",
+    questionImg:"https://commons.wikimedia.org/wiki/Special:FilePath/MIZUNO%20logo.svg",
+    choices:["Mizuno","HONMA","PRGR","Srixon"],
+    answer:0,
+    explanation:"ランバードのマークで有名なのがMizuno。"
+  },
+  {
+    question:"このロゴのブランド名は？",
+    questionImg:"https://logo.clearbit.com/honmagolf.com",
+    choices:["YAMAHA","HONMA","EPON","Titleist"],
+    answer:1,
+    explanation:"HONMA（本間ゴルフ）は日本の老舗ゴルフブランド。"
+  },
+  {
+    question:"このロゴのブランド名は？",
+    questionImg:"https://logo.clearbit.com/epongolf.co.jp",
+    choices:["PRGR","EPON","Mizuno","Bridgestone Golf"],
+    answer:1,
+    explanation:"EPONは日本の鍛造系・地クラブブランドとして知られている。"
+  }
+];
   const intermediate = [
     {question:"向かい風5m、150yの目安は？",
     choices:["そのまま","1番手上げ","2番手上げ","下げる"],
@@ -1164,6 +1186,13 @@ function startLevel(level){
     }
 
     html += "<p>"+escapeHtml(q.question)+"</p>";
+
+if(q.questionImg){
+  html += "<div class='holeImgWrap'>";
+  html += "<img class='holeImg' src='" + q.questionImg + "' alt='問題画像' loading='lazy'>";
+  html += "<div class='smallNote'>※研修用画像</div>";
+  html += "</div>";
+}
 
     for(let i=0;i<options.length;i++){
       html += "<button class='choice' onclick='checkAnswer("+i+")' id='btn"+i+"'>"+escapeHtml(options[i].text)+"</button>";
