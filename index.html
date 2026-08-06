@@ -1,10 +1,16 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>KNOA YardBook</title>
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="KNOA YardBook">
 
 <style>
 
@@ -15,97 +21,143 @@ box-sizing:border-box;
 }
 
 body{
+
 background:#0b3d0b;
 font-family:-apple-system,BlinkMacSystemFont,sans-serif;
 color:white;
-text-align:center;
+
 }
 
 header{
-padding:20px;
-font-size:28px;
-font-weight:bold;
+
 background:#062806;
+padding:20px;
+text-align:center;
+font-size:30px;
+font-weight:bold;
+box-shadow:0 3px 10px rgba(0,0,0,.3);
+
 }
 
-#menu{
+.container{
+
+max-width:900px;
+margin:auto;
 padding:20px;
+
+}
+
+.card{
+
+background:#111;
+border-radius:18px;
+padding:20px;
+
+animation:fade .35s;
+
+}
+
+@keyframes fade{
+
+from{
+
+opacity:0;
+transform:translateY(10px);
+
+}
+
+to{
+
+opacity:1;
+transform:none;
+
+}
+
 }
 
 button{
-width:90%;
-max-width:350px;
+
+width:100%;
 padding:18px;
-margin:8px;
-font-size:22px;
+margin-top:12px;
+
 border:none;
+
 border-radius:15px;
+
 background:#1b5e20;
+
 color:white;
+
+font-size:20px;
+
 cursor:pointer;
+
+transition:.15s;
+
 }
 
 button:active{
+
 transform:scale(.97);
+
 }
 
-#viewer{
-display:none;
-padding:15px;
-}
+.row{
 
-.top{
 display:flex;
-justify-content:space-between;
-align-items:center;
-margin-bottom:10px;
-}
-
-h2{
-font-size:28px;
-}
-
-.tab{
-display:flex;
-justify-content:center;
-margin-bottom:15px;
 gap:10px;
+
 }
 
-.tab button{
-width:140px;
-font-size:18px;
+.row button{
+
+flex:1;
+
 }
 
-.imageWrap{
+.imageArea{
 
-overflow:auto;
-border-radius:15px;
+margin-top:20px;
+
 background:white;
+
+border-radius:15px;
+
+overflow:hidden;
+
 padding:10px;
 
 }
 
-.imageWrap img{
+.imageArea img{
 
 width:100%;
-max-width:900px;
-transform-origin:center;
+display:block;
+
 touch-action:none;
 
-}
-
-.bottom{
-
-display:flex;
-justify-content:space-between;
-margin-top:15px;
+transform-origin:center;
 
 }
 
-.bottom button{
+.topTitle{
 
-width:45%;
+text-align:center;
+
+font-size:28px;
+
+margin-bottom:10px;
+
+}
+
+.sub{
+
+text-align:center;
+
+opacity:.8;
+
+margin-bottom:20px;
 
 }
 
@@ -121,49 +173,9 @@ KNOA YardBook
 
 </header>
 
-<div id="menu">
+<div class="container">
 
-<h2>穂高カントリークラブ</h2>
-
-<br>
-
-<button onclick="openHole(0)">① Hole1</button>
-
-<button onclick="openHole(1)">② Hole2</button>
-
-<button onclick="openHole(2)">③ Hole3</button>
-
-</div>
-
-<div id="viewer">
-
-<div class="top">
-
-<h2 id="title"></h2>
-
-<button onclick="backMenu()">HOME</button>
-
-</div>
-
-<div class="tab">
-
-<button onclick="showCourse()">コース</button>
-
-<button onclick="showGreen()">グリーン</button>
-
-</div>
-
-<div class="imageWrap">
-
-<img id="img">
-
-</div>
-
-<div class="bottom">
-
-<button onclick="prevHole()">← 前</button>
-
-<button onclick="nextHole()">次 →</button>
+<div class="card" id="app">
 
 </div>
 
@@ -171,94 +183,176 @@ KNOA YardBook
 
 <script>
 
-const holes=[
+const holes = [
 
 {
+name:"Hole1",
+par:"PAR5",
+yard:"575Y",
 
-title:"Hole1 PAR5 575Y",
-
-course:"images/1-course.jpg",
-
-green:"images/1-green.jpg"
+course:"IMG_4412.jpeg",
+green:"IMG_4413.jpeg"
 
 },
 
 {
+name:"Hole2",
+par:"PAR4",
+yard:"355Y",
 
-title:"Hole2 PAR4 355Y",
-
-course:"images/2-course.jpg",
-
-green:"images/2-green.jpg"
+course:"IMG_4412.jpeg",
+green:"IMG_4413.jpeg"
 
 },
 
 {
+name:"Hole3",
+par:"PAR3",
+yard:"190Y",
 
-title:"Hole3 PAR3 190Y",
-
-course:"images/3-course.jpg",
-
-green:"images/3-green.jpg"
+course:"IMG_4412.jpeg",
+green:"IMG_4413.jpeg"
 
 }
 
 ];
 
-let current=0;
-let mode="course";
+let currentHole=0;
 
-function openHole(n){
+let currentImage="course";
 
-current=n;
+function showHome(){
 
-document.getElementById("menu").style.display="none";
+document.getElementById("app").innerHTML=`
 
-document.getElementById("viewer").style.display="block";
+<div class="topTitle">
+穂高カントリークラブ
+</div>
 
-load();
+<div class="sub">
+OUT
+</div>
+
+<button onclick="openHole(0)">
+① Hole1
+</button>
+
+<button onclick="openHole(1)">
+② Hole2
+</button>
+
+<button onclick="openHole(2)">
+③ Hole3
+</button>
+
+`;
 
 }
 
-function load(){
+function openHole(index){
 
-document.getElementById("title").innerHTML=holes[current].title;
+currentHole=index;
 
-if(mode=="course"){
+currentImage="course";
 
-document.getElementById("img").src=holes[current].course;
-
-}else{
-
-document.getElementById("img").src=holes[current].green;
+drawHole();
 
 }
+
+function drawHole(){
+
+const hole=holes[currentHole];
+
+let img=(currentImage==="course")
+?hole.course
+:hole.green;
+
+document.getElementById("app").innerHTML=`
+
+<div class="topTitle">
+
+${hole.name}
+
+</div>
+
+<div class="sub">
+
+${hole.par}
+&nbsp;&nbsp;
+${hole.yard}
+
+</div>
+
+<div class="row">
+
+<button onclick="showCourse()">
+コース
+</button>
+
+<button onclick="showGreen()">
+グリーン
+</button>
+
+</div>
+
+<div class="imageArea">
+
+<img
+id="yardImage"
+src="${img}"
+>
+
+</div>
+
+<div class="row">
+
+<button onclick="prevHole()">
+
+← 前へ
+
+</button>
+
+<button onclick="nextHole()">
+
+次へ →
+
+</button>
+
+</div>
+
+<button onclick="showHome()">
+
+ホームへ戻る
+
+</button>
+
+`;
 
 }
 
 function showCourse(){
 
-mode="course";
+currentImage="course";
 
-load();
+drawHole();
 
 }
 
 function showGreen(){
 
-mode="green";
+currentImage="green";
 
-load();
+drawHole();
 
 }
 
 function nextHole(){
 
-if(current<holes.length-1){
+if(currentHole<holes.length-1){
 
-current++;
+currentHole++;
 
-load();
+drawHole();
 
 }
 
@@ -266,26 +360,14 @@ load();
 
 function prevHole(){
 
-if(current>0){
+if(currentHole>0){
 
-current--;
+currentHole--;
 
-load();
-
-}
+drawHole();
 
 }
 
-function backMenu(){
-
-document.getElementById("viewer").style.display="none";
-
-document.getElementById("menu").style.display="block";
-
 }
 
-</script>
-
-</body>
-
-</html>
+showHome();
